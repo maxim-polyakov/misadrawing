@@ -6,11 +6,13 @@ const cors = require('cors')
 const fileUpload = require('express-fileupload')
 const path = require("path");
 const app = express()
-
+const corsOptions = {
+    origin: 'https://misagallery.baxic.ru', // Укажите точный адрес клиента
+};
 
 app.use(express.json());
 app.use(express.static(path.resolve(__dirname, './src/static')))
-app.use(cors())
+app.use(cors(corsOptions));
 app.use(fileUpload({}))
 app.use('/api', router)
 
