@@ -48,10 +48,8 @@ const Auth = observer(() => {
             let data;
             if (isLogin) {
                 data = await login(email, password);
-                navigate(GALLERY_ROUTE);
             } else {
                 data = await registration(email, password);
-                navigate(GALLERY_ROUTE);
             }
 
             user.setUser(data);
@@ -59,9 +57,12 @@ const Auth = observer(() => {
 
             setEmail("");
             setPassword("");
+            navigate(GALLERY_ROUTE);
+
         } catch (error) {
-            console.log(error.response?.data);
-            setError(error.response?.data?.message || "Произошла ошибка при авторизации");
+            console.log("Ошибка авторизации:", error);
+            // Просто используем message из ошибки, так как мы уже обработали её в API функциях
+            setError(error.message);
         }
     };
 
