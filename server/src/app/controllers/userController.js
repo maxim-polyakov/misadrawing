@@ -37,22 +37,40 @@ class UserController {
     }
 
     async login(req, res, next) {
-            const {email, password} = req.body
+        try {
+            const { email, password } = req.body;
+
+            // Проверяем, что email и password переданы
+            if (!email || !password) {
+                return next(ApiError.badRequest('Email и пароль обязательны'));
+            }
 
             const user = await db.db
                 .select()
                 .from(Users.users)
-                .where(eq(Users.users.email, email))
-            if (!user) {
-                return next(ApiError.internal('Пользователь не найден'))
-            }
-            let comparePassword = bcrypt.compareSync(password, user[0].password)
-            if (!comparePassword) {
-                return next(ApiError.internal('Указан неверный пароль'))
-            }
-            const token = generateJwt(user.id, user.email, user.role)
-            return res.json({token})
+                .where(eq(Users.users.email, email));
 
+            // Проверяем длину массива, а не сам массив
+            if (user.length === 0) {
+                return next(ApiError.badRequest('Пользователь не найден'));
+            }
+
+            const userData = user[0]; // Берем первого пользователя из массива
+
+            // Проверяем пароль
+            let comparePassword = bcrypt.compareSync(password, userData.password);
+            if (!comparePassword) {
+                return next(ApiError.badRequest('Указан неверный пароль'));
+            }
+
+            // Генерируем токен
+            const token = generateJwt(userData.id, userData.email, userData.role);
+
+            return res.json({ token });
+
+        } catch (error) {
+            return next(ApiError.internal('Ошибка при авторизации'));
+        }
     }
 
     async check(req, res, next) {
