@@ -1,4 +1,4 @@
-FROM node:22.15.0
+FROM node:24-alpine
 
 COPY package*.json .
 COPY yarn.lock .
@@ -7,6 +7,4 @@ RUN yarn --frozen-lockfile
 
 COPY . .
 
-RUN yarn build
-
-CMD ["yarn", "start:prod"]
+CMD ["yarn", "start"]
