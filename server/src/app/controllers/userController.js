@@ -46,7 +46,7 @@ class UserController {
             if (!user) {
                 return next(ApiError.internal('Пользователь не найден'))
             }
-            let comparePassword = bcrypt.compareSync(password, user[0].password)
+            let comparePassword = bcrypt.compareSync(password, user.password)
             if (!comparePassword) {
                 return next(ApiError.internal('Указан неверный пароль'))
             }

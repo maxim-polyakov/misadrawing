@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  bootcamp_back:
+    container_name: misadrawings_server
+    build:
+      dockerfile: Dockerfile
+      context: .
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    restart: always
+    network_mode: host
+  #bootcamp_db:
+  #  container_name: bootcamp_db
+  #  image: postgres:16
+  #  restart: always
+  #  env_file:
+  #    - .env
+  #  network_mode: host
+  #  volumes:
+  #    - bootcamp_db_data:/var/lib/postgresql/data
+# volumes:
+#   bootcamp_db_data:
