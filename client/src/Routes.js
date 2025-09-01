@@ -1,24 +1,26 @@
-import { Auth } from "./pages/Auth.js";
-import { Gallery } from "./pages/Gallery.js";
+// Routes.js
+import Gallery from "./pages/Gallery";
+import Auth from "./pages/Auth";
 import {
-    LOGIN_ROUTE,
     GALLERY_ROUTE,
-    REGISTRATION_ROUTE,
-} from "./utils/consts.js";
+    LOGIN_ROUTE,
+    REGISTRATION_ROUTE
+} from "./utils/consts";
 
-export const authRoutes = [];
-
-export const publickRoutes = [
+export const authRoutes = [
     {
         path: GALLERY_ROUTE,
-        Component: Gallery,
-    },
+        Component: Gallery
+    }
+];
+
+export const publicRoutes = [ // Исправлено: publicRoutes вместо publickRoutes
     {
         path: LOGIN_ROUTE,
-        Component: Auth,
+        Component: Auth
     },
     {
         path: REGISTRATION_ROUTE,
-        Component: Auth,
-    },
+        Component: Auth
+    }
 ];

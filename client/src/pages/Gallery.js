@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import './Gallery.css';
 
 
-export const Gallery = observer(() => {
+const Gallery = observer(() => {
     return (
                 <div className="scroll-container" style={{backgroundImage: `url(${process.env.REACT_APP_API_URL}/image.jpg)`}}>
                     <div className="gallery">
@@ -152,3 +152,4 @@ export const Gallery = observer(() => {
                 </div>
     );
 });
+export default Gallery;
