@@ -10,3 +10,9 @@ services:
     ports:
       - "5000:5000"
     restart: unless-stopped
+    networks:
+      - misadrawings-network
+
+networks:
+  misadrawings-network:
+    driver: bridge

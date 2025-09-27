@@ -10,3 +10,9 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+    networks:
+      - misadrawings-network
+
+networks:
+  misadrawings-network:
+    driver: bridge
