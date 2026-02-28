@@ -22,6 +22,13 @@
       "when": 1772296898071,
       "tag": "0002_normal_dexter_bennett",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1730217600000,
+      "tag": "0003_create_tables",
+      "breakpoints": true
     }
   ]
 }
