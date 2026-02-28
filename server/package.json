@@ -6,7 +6,7 @@
     "dev": "nodemon --exec tsx index.js",
     "start": "tsx index.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx ./src/db/migrate.ts"
+    "db:migrate": "node ./src/db/migratePg.js"
   },
   "keywords": [],
   "author": "",

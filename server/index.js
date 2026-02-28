@@ -17,14 +17,13 @@ app.use('/api', router)
 
 const start = async () => {
     try {
-        const { migrate } = await import('drizzle-orm/neon-http/migrator')
-        const { db } = await import('./src/db/index.ts')
-        await migrate(db, { migrationsFolder: 'src/db/migrations' })
-        console.log('Migrations completed')
+        const { runMigrations } = require('./src/db/migratePg.js')
+        await runMigrations()
 
         app.listen(PORT, '0.0.0.0', () => console.log(`Server started on port ${PORT}`))
     } catch (e) {
-        console.log(e)
+        console.error(e)
+        process.exit(1)
     }
 }
 
