@@ -1,20 +1,38 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { Button, Card, Container, Form, Alert } from "react-bootstrap";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { LOGIN_ROUTE, REGISTRATION_ROUTE, GALLERY_ROUTE } from "../utils/consts.js";
-import { login, registration } from "../http/userApi.js";
+import { login, registration, getGoogleLoginUrl } from "../http/userApi.js";
 import { observer } from "mobx-react-lite";
 import { Context } from "../index.js";
+import { jwtDecode } from "jwt-decode";
 
 const Auth = observer(() => {
     const { user } = useContext(Context);
     const location = useLocation();
-    const isLogin = location.pathname === LOGIN_ROUTE && true;
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const isLogin = location.pathname === LOGIN_ROUTE && true;
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState(""); // Состояние для ошибок
+    const [error, setError] = useState("");
+
+    // Обработка токена/ошибки из URL после Google OAuth
+    useEffect(() => {
+        const token = searchParams.get("token");
+        const errorParam = searchParams.get("error");
+        if (token) {
+            localStorage.setItem("token", token);
+            user.setUser(jwtDecode(token));
+            user.setIsAuth(true);
+            setSearchParams({});
+            navigate(GALLERY_ROUTE);
+        } else if (errorParam === "google_auth_failed") {
+            setError("Не удалось войти через Google. Попробуйте снова.");
+            setSearchParams({});
+        }
+    }, [searchParams, navigate, user, setSearchParams]);
 
     const swapMethod = () => {
         setEmail("");
@@ -83,6 +101,16 @@ const Auth = observer(() => {
                     </Alert>
                 )}
 
+                <div className="mb-3">
+                    <Button
+                        variant="outline-primary"
+                        className="w-100"
+                        onClick={() => window.location.href = getGoogleLoginUrl()}
+                    >
+                        Войти через Google
+                    </Button>
+                </div>
+                <hr className="my-3" />
                 <Form className="d-flex flex-column">
                     <Form.Control
                         className="mt-3"

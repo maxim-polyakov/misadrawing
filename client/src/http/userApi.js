@@ -1,6 +1,12 @@
 import { $host, $authhost } from ".";
 import { jwtDecode } from "jwt-decode";
 
+/** URL для входа через Google (редирект на бэкенд) */
+export const getGoogleLoginUrl = () => {
+    const base = process.env.REACT_APP_API_URL || "";
+    return `${base}/api/user/auth/google`;
+};
+
 export const registration = async (email, password) => {
     try {
         const { data } = await $host.post("api/user/registration", {

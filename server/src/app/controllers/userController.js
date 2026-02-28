@@ -27,12 +27,12 @@ class UserController {
             return next(ApiError.badRequest('Пользователь с таким email уже существует'))
         }
         const hashPassword = await bcrypt.hash(password, 5)
-        const user = await db.db.insert(Users.users).values({
+        const [inserted] = await db.db.insert(Users.users).values({
             email: email,
-            role: role,
+            role: role || 'USER',
             password: hashPassword
-        })
-        const token = generateJwt(user.id, user.email, user.role)
+        }).returning()
+        const token = generateJwt(inserted.id, inserted.email, inserted.role)
         return res.json({token})
     }
 
@@ -40,7 +40,6 @@ class UserController {
         try {
             const { email, password } = req.body;
 
-            // Проверяем, что email и password переданы
             if (!email || !password) {
                 return next(ApiError.badRequest('Email и пароль обязательны'));
             }
@@ -50,22 +49,23 @@ class UserController {
                 .from(Users.users)
                 .where(eq(Users.users.email, email));
 
-            // Проверяем длину массива, а не сам массив
             if (user.length === 0) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
 
-            const userData = user[0]; // Берем первого пользователя из массива
+            const userData = user[0];
 
-            // Проверяем пароль
-            let comparePassword = bcrypt.compareSync(password, userData.password);
+            // Пользователи через Google не имеют пароля
+            if (!userData.password) {
+                return next(ApiError.badRequest('Этот аккаунт привязан к Google. Войдите через Google'));
+            }
+
+            const comparePassword = bcrypt.compareSync(password, userData.password);
             if (!comparePassword) {
                 return next(ApiError.badRequest('Указан неверный пароль'));
             }
 
-            // Генерируем токен
             const token = generateJwt(userData.id, userData.email, userData.role);
-
             return res.json({ token });
 
         } catch (error) {
@@ -76,6 +76,20 @@ class UserController {
     async check(req, res, next) {
         const token = generateJwt(req.user.id, req.user.email, req.user.role)
         return res.json({token})
+    }
+
+    async googleAuthCallback(req, res, next) {
+        try {
+            if (!req.user) {
+                const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+                return res.redirect(`${clientUrl}/login?error=google_auth_failed`);
+            }
+            const token = generateJwt(req.user.id, req.user.email, req.user.role);
+            const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+            return res.redirect(`${clientUrl}/login?token=${token}`);
+        } catch (err) {
+            return next(err);
+        }
     }
 }
 

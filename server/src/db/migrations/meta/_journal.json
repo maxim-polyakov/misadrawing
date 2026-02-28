@@ -15,6 +15,13 @@
       "when": 1756744465707,
       "tag": "0001_slow_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772296898071,
+      "tag": "0002_normal_dexter_bennett",
+      "breakpoints": true
     }
   ]
 }
