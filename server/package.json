@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nodemon --exec tsx index.js",
     "start": "tsx index.js",
+    "build": "echo 'No build step'",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node ./src/db/migratePg.js"
   },
