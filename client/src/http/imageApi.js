@@ -24,6 +24,11 @@ export const getImages = async () => {
     return data;
 };
 
+export const deleteImage = async (id) => {
+    const { data } = await $authhost.delete(`api/images/${id}`);
+    return data;
+};
+
 export const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append("image", file);

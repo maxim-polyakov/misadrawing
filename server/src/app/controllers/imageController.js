@@ -1,8 +1,9 @@
 const ApiError = require('../error/ApiError')
 const fs = require('fs')
-const { uploadImage, uploadBackground } = require('../../services/s3Service')
+const { uploadImage, uploadBackground, deleteFromS3 } = require('../../services/s3Service')
 const db = require('../../db/index.ts')
 const Users = require('../../db/schema.ts')
+const { eq } = require('drizzle-orm')
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
@@ -77,6 +78,22 @@ class ImageController {
                 backgroundUrl,
             })
         } catch (e) {
+            return next(ApiError.internal(e.message))
+        }
+    }
+
+    async delete(req, res, next) {
+        try {
+            const id = parseInt(req.params.id, 10)
+            if (isNaN(id)) return next(ApiError.badRequest('Некорректный ID'))
+            const rows = await db.db.select().from(Users.images).where(eq(Users.images.id, id))
+            if (rows.length === 0) return next(ApiError.notFound('Изображение не найдено'))
+            const url = rows[0].url
+            await deleteFromS3(url)
+            await db.db.delete(Users.images).where(eq(Users.images.id, id))
+            return res.json({ success: true })
+        } catch (e) {
+            console.error('[delete] Ошибка:', e.message, e.stack)
             return next(ApiError.internal(e.message))
         }
     }

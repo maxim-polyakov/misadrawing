@@ -33,6 +33,38 @@
     border-radius: 5px;
 }
 
+.gallery-item {
+    position: relative;
+    display: inline-block;
+}
+
+.gallery-item-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.gallery-item-delete:hover {
+    opacity: 1;
+}
+
+.gallery-item-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .gallery img:nth-child(5n - 1) {
     grid-column: 2 / span 2
 }

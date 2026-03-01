@@ -1,0 +1,22 @@
+# Пример конфига nginx для загрузки файлов до 50 МБ
+# Скопируйте в /etc/nginx/sites-available/ или в нужный server block
+
+server {
+    listen 80;
+    server_name gallery.baxic.ru;
+
+    # Обязательно для загрузки картинок!
+    client_max_body_size 50m;
+    proxy_read_timeout 120s;
+    proxy_connect_timeout 120s;
+    proxy_send_timeout 120s;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

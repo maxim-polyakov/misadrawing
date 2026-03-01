@@ -6,6 +6,7 @@ const checkRoleMiddleware = require('../middleware/checkRoleMiddleware')
 
 router.post('/upload', authMiddleware, checkRoleMiddleware('ADMIN'), imageController.upload)
 router.post('/upload-background', authMiddleware, checkRoleMiddleware('ADMIN'), imageController.uploadBackground)
+router.delete('/:id', authMiddleware, checkRoleMiddleware('ADMIN'), imageController.delete)
 router.get('/', imageController.getAll)
 
 module.exports = router

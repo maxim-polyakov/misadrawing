@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
 const crypto = require('crypto')
 const path = require('path')
 
@@ -58,4 +58,15 @@ async function uploadBackground(buffer, mimeType) {
     return `${PUBLIC_BASE_URL}/${key}`
 }
 
-module.exports = { uploadImage, uploadBackground }
+/**
+ * Удаляет файл из S3 по URL
+ * @param {string} url - полный URL объекта (например https://storage.../bucket/images/uuid.jpg)
+ */
+async function deleteFromS3(url) {
+    const baseUrl = PUBLIC_BASE_URL.replace(/\/$/, '') + '/'
+    const key = url.startsWith(baseUrl) ? url.slice(baseUrl.length) : url.replace(/^.*\/[^/]+\//, '')
+    if (!key) throw new Error('Не удалось извлечь ключ из URL')
+    await s3Client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
+}
+
+module.exports = { uploadImage, uploadBackground, deleteFromS3 }

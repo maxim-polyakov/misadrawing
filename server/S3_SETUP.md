@@ -23,6 +23,46 @@ S3__BackgroundUrl=https://storage.yandexcloud.net/ваш_бакет/background.j
 
 При превышении лимита сервер вернёт ошибку «Размер файла превышает 50 МБ».
 
+## ERR_NETWORK при загрузке
+
+Если видите «NetworkError: запрос не дошёл до сервера» — чаще всего мешает **nginx**.
+
+### Nginx: client_max_body_size
+
+По умолчанию nginx ограничивает тело запроса **1 МБ**. Для загрузки картинок до 50 МБ добавьте в конфиг:
+
+```nginx
+server {
+    listen 80;
+    server_name gallery.baxic.ru;
+    
+    client_max_body_size 50m;
+    proxy_read_timeout 120s;
+    proxy_connect_timeout 120s;
+    proxy_send_timeout 120s;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;  # или адрес вашего Node-сервера
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Проверка и перезагрузка:
+```bash
+nginx -t && nginx -s reload
+```
+
+### Другие причины ERR_NETWORK
+
+- **CORS** — проверьте, что nginx не режет заголовки и сервер отвечает на OPTIONS
+- **Прокси/балансировщик** — аналогичные лимиты на размер тела запроса
+- **Сервер недоступен** — проверьте, что `https://gallery.baxic.ru` открывается и API отвечает
+
 ## Админ-панель
 
 Загрузка картинок и фона доступна только пользователям с ролью `ADMIN`. Чтобы назначить админа, обновите роль в БД:
