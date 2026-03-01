@@ -1,5 +1,6 @@
 require('dotenv').config()
 const express = require('express')
+const os = require('os')
 const passport = require('./src/config/passport.js')
 const router = require('./src/app/routes/index.js')
 const PORT = process.env.PORT || 5000
@@ -7,10 +8,17 @@ const cors = require('cors')
 const fileUpload = require('express-fileupload')
 const app = express()
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(passport.initialize());
 app.use(cors());
-app.use(fileUpload({}))
+app.use(fileUpload({
+    limits: { fileSize: 50 * 1024 * 1024 },
+    useTempFiles: true,
+    tempFileDir: os.tmpdir(),
+    uploadTimeout: 120000,
+    abortOnLimit: true,
+    responseOnLimit: 'Размер файла превышает 50 МБ',
+}))
 app.use('/api', router)
 
 const start = async () => {

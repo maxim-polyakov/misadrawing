@@ -23,7 +23,10 @@ const Admin = observer(() => {
             await uploadImage(file);
             setMessage({ type: "success", text: "Картинка загружена" });
         } catch (err) {
-            setMessage({ type: "danger", text: err.response?.data?.message || err.message || "Ошибка загрузки" });
+            const msg = err.code === "ECONNABORTED"
+                ? "Таймаут. Файл слишком большой или медленное соединение."
+                : err.response?.data?.message || err.message || "Ошибка загрузки";
+            setMessage({ type: "danger", text: msg });
         } finally {
             setImageUploading(false);
             e.target.value = "";
@@ -39,7 +42,10 @@ const Admin = observer(() => {
             await uploadBackground(file);
             setMessage({ type: "success", text: "Фоновое изображение загружено" });
         } catch (err) {
-            setMessage({ type: "danger", text: err.response?.data?.message || err.message || "Ошибка загрузки" });
+            const msg = err.code === "ECONNABORTED"
+                ? "Таймаут. Файл слишком большой или медленное соединение."
+                : err.response?.data?.message || err.message || "Ошибка загрузки";
+            setMessage({ type: "danger", text: msg });
         } finally {
             setBgUploading(false);
             e.target.value = "";
@@ -69,6 +75,9 @@ const Admin = observer(() => {
                 <Card>
                     <Card.Header>Загрузка картинок в галерею</Card.Header>
                     <Card.Body>
+                        <p className="text-muted small mb-2">
+                            Максимум 50 МБ. Форматы: JPEG, PNG, GIF, WebP
+                        </p>
                         <input
                             ref={imageInputRef}
                             type="file"
