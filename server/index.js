@@ -19,6 +19,12 @@ app.use(fileUpload({
     abortOnLimit: true,
     responseOnLimit: 'Размер файла превышает 50 МБ',
 }))
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/images') && req.method === 'POST') {
+        console.log(`[${new Date().toISOString()}] POST ${req.path} - Content-Length: ${req.headers['content-length'] || '?'}`)
+    }
+    next()
+})
 app.use('/api', router)
 
 const start = async () => {

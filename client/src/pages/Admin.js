@@ -23,10 +23,9 @@ const Admin = observer(() => {
             await uploadImage(file);
             setMessage({ type: "success", text: "Картинка загружена" });
         } catch (err) {
-            const msg = err.code === "ECONNABORTED"
-                ? "Таймаут. Файл слишком большой или медленное соединение."
-                : err.response?.data?.message || err.message || "Ошибка загрузки";
+            const msg = err.detail || err.response?.data?.message || err.message || "Ошибка загрузки";
             setMessage({ type: "danger", text: msg });
+            console.error("Upload error:", { err, detail: err.detail, response: err.response?.data });
         } finally {
             setImageUploading(false);
             e.target.value = "";
@@ -42,10 +41,9 @@ const Admin = observer(() => {
             await uploadBackground(file);
             setMessage({ type: "success", text: "Фоновое изображение загружено" });
         } catch (err) {
-            const msg = err.code === "ECONNABORTED"
-                ? "Таймаут. Файл слишком большой или медленное соединение."
-                : err.response?.data?.message || err.message || "Ошибка загрузки";
+            const msg = err.detail || err.response?.data?.message || err.message || "Ошибка загрузки";
             setMessage({ type: "danger", text: msg });
+            console.error("Upload error:", { err, detail: err.detail, response: err.response?.data });
         } finally {
             setBgUploading(false);
             e.target.value = "";

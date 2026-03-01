@@ -15,6 +15,7 @@ function getFileBuffer(file) {
 class ImageController {
     async upload(req, res, next) {
         try {
+            console.log('[upload] Запрос получен, files:', req.files ? Object.keys(req.files) : 'нет')
             if (!req.files?.image) {
                 return next(ApiError.badRequest('Файл image обязателен'))
             }
@@ -36,14 +37,17 @@ class ImageController {
                 .values({ url, userId })
                 .returning()
 
+            console.log('[upload] Успех, url:', url)
             return res.json({ id: inserted.id, url })
         } catch (e) {
+            console.error('[upload] Ошибка:', e.message, e.stack)
             return next(ApiError.internal(e.message))
         }
     }
 
     async uploadBackground(req, res, next) {
         try {
+            console.log('[uploadBackground] Запрос получен, files:', req.files ? Object.keys(req.files) : 'нет')
             if (!req.files?.image) {
                 return next(ApiError.badRequest('Файл image обязателен'))
             }
@@ -56,8 +60,10 @@ class ImageController {
             }
             const buffer = getFileBuffer(file)
             const url = await uploadBackground(buffer, file.mimetype)
+            console.log('[uploadBackground] Успех, url:', url)
             return res.json({ url })
         } catch (e) {
+            console.error('[uploadBackground] Ошибка:', e.message, e.stack)
             return next(ApiError.internal(e.message))
         }
     }
