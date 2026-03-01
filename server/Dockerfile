@@ -2,11 +2,18 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-COPY package*.json .
-COPY yarn.lock .
-
+# Копируем package.json, yarn.lock и ставим зависимости
+COPY package*.json yarn.lock ./
 RUN yarn --frozen-lockfile
 
+# Копируем весь код и собираем production-версию
 COPY . .
+RUN yarn build
 
-CMD ["yarn", "start"]
+# Устанавливаем serve для отдачи статики
+RUN yarn global add serve
+
+EXPOSE 5000
+
+# Запуск production-бандла
+CMD ["serve", "-s", "build", "-l", "5000"]
