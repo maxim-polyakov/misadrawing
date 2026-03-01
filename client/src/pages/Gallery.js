@@ -1,9 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useContext, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { Context } from "../index.js";
 import { getImages, deleteImage } from "../http/imageApi.js";
-import { ADMIN_ROUTE } from "../utils/consts.js";
 import "./Gallery.css";
 
 const Gallery = observer(() => {
@@ -42,13 +40,6 @@ const Gallery = observer(() => {
             className="scroll-container"
             style={backgroundUrl ? { backgroundImage: `url(${backgroundUrl})` } : undefined}
         >
-            {user?.isAuth && user?.user?.role === "ADMIN" && (
-                <div className="mb-3 px-3">
-                    <Link to={ADMIN_ROUTE} className="btn btn-outline-light btn-sm">
-                        Кабинет админа
-                    </Link>
-                </div>
-            )}
             <div className="gallery">
                 {loading ? (
                     <div>Загрузка...</div>
