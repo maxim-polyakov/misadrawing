@@ -29,6 +29,13 @@
       "when": 1730217600000,
       "tag": "0003_create_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772383984113,
+      "tag": "0004_violet_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

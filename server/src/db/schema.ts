@@ -4,6 +4,12 @@ export const mymessages = pgTable("mymessages", {
     message: varchar("message").notNull(),
 })
 
+export const images = pgTable('images', {
+    id: serial("id").primaryKey(),
+    url: varchar("url").notNull(),
+    userId: integer("user_id"),
+})
+
 export const users = pgTable('users', {
     id: serial("id").primaryKey(),
     email: varchar("email").unique(),

@@ -1,29 +1,56 @@
 import { observer } from "mobx-react-lite";
-import './Gallery.css';
+import { useContext, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Context } from "../index.js";
+import { getImages } from "../http/imageApi.js";
+import { ADMIN_ROUTE } from "../utils/consts.js";
+import "./Gallery.css";
 
 const Gallery = observer(() => {
-    // Количество изображений
-    const totalImages = 71; // от 0 до 70 включительно
+    const { user } = useContext(Context);
+    const [images, setImages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [backgroundUrl, setBackgroundUrl] = useState("");
 
-    // Создаем массив с номерами изображений
-    const imageNumbers = Array.from({ length: totalImages }, (_, i) => i);
+    useEffect(() => {
+        getImages()
+            .then((data) => {
+                setImages(data.images || []);
+                setBackgroundUrl(data.backgroundUrl || "");
+            })
+            .catch(() => setImages([]))
+            .finally(() => setLoading(false));
+    }, []);
 
     return (
         <div
             className="scroll-container"
-            style={{ backgroundImage: `url(${process.env.REACT_APP_API_URL}/image.jpg)` }}
+            style={backgroundUrl ? { backgroundImage: `url(${backgroundUrl})` } : undefined}
         >
+            {user?.isAuth && user?.user?.role === "ADMIN" && (
+                <div className="mb-3 px-3">
+                    <Link to={ADMIN_ROUTE} className="btn btn-outline-light btn-sm">
+                        Кабинет админа
+                    </Link>
+                </div>
+            )}
             <div className="gallery">
-                {imageNumbers.map((number) => (
-                    <img
-                        key={number}
-                        src={`${process.env.REACT_APP_API_URL}/${number}.jpg`}
-                        width={300}
-                        height={300}
-                        alt={`описание изображения ${number}`}
-                        loading="lazy" // Ленивая загрузка для оптимизации
-                    />
-                ))}
+                {loading ? (
+                    <div>Загрузка...</div>
+                ) : images.length === 0 ? (
+                    <div>Нет изображений. Загрузите первую картинку.</div>
+                ) : (
+                    images.map((img, i) => (
+                        <img
+                            key={img.id || i}
+                            src={img.url}
+                            width={300}
+                            height={300}
+                            alt={`изображение ${i + 1}`}
+                            loading="lazy"
+                        />
+                    ))
+                )}
             </div>
         </div>
     );
