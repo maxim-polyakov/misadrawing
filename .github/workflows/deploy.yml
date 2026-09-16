@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create environment files
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
+          CLIENT_ENV: ${{ secrets.CLIENT_ENV }}
+        run: |
+          printf '%s\n' "$SERVER_ENV" > server/.env
+          printf '%s\n' "$CLIENT_ENV" > client/.env
+
+      - name: Copy project to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          source: "client,server,docker-compose.yml"
+          target: ${{ secrets.DEPLOY_PATH }}
+          overwrite: true
+
+      - name: Build project on server
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: DEPLOY_PATH
+          script_stop: true
+          script: |
+            cd "$DEPLOY_PATH"
+            docker compose up -d --build --remove-orphans
