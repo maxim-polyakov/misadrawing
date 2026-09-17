@@ -4,7 +4,7 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import { authRoutes, publicRoutes } from "../Routes.js";
 import { observer } from "mobx-react-lite";
 import Gallery from "../pages/Gallery.js";
-import { LOGIN_ROUTE, GALLERY_ROUTE } from "../utils/consts.js";
+import { LOGIN_ROUTE } from "../utils/consts.js";
 
 const AppRouter = observer(() => {
     const { user } = useContext(Context);
