@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "test": "node --test",
     "dev": "nodemon --exec tsx index.js",
     "start": "tsx index.js",
     "build": "echo 'No build step'",
