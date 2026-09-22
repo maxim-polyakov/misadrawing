@@ -28,9 +28,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          DEFAULT_BRANCH="$(gh repo view "${{ github.repository }}" --json defaultBranchRef --jq .defaultBranchRef.name)"
           gh workflow run claude-main.yml \
             --repo "${{ github.repository }}" \
-            --ref main \
+            --ref "$DEFAULT_BRANCH" \
             -f before_sha="${{ github.event.before }}" \
             -f head_sha="${{ github.sha }}"
 
@@ -42,7 +43,7 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
-      actions: read
+      actions: write
     steps:
       - name: Checkout main at pushed commit
         uses: actions/checkout@v6
@@ -56,17 +57,59 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_bots: "*"
           prompt: |
-            A new push landed on the main branch. Review the commit range
+            A new push landed on the default branch. Review the commit range
             ${{ github.event.inputs.before_sha }}..${{ github.event.inputs.head_sha }}
             and the relevant surrounding code for correctness, regressions,
             security issues, performance problems, maintainability, and test
-            coverage. Read and follow repository instructions such as CLAUDE.md.
+            coverage. Read and follow repository instructions such as CLAUDE.md
+            if present.
 
-            Fix confirmed defects directly on main. Add or update focused
-            automated tests for changed behavior and every defect you fix. Run
-            the relevant test, lint, and build commands documented by the
-            repository. Do not change unrelated code, weaken tests, rewrite
-            history, or edit workflow files. If changes are needed, commit and
-            push them to main with a clear message. If no changes are needed,
-            leave the repository untouched and summarize the checks performed.
-            Never create another commit solely to report results.
+            REQUIRED GATE — Deploy/CI verify must be green before you finish:
+            1. Open `.github/workflows/` and find the primary CI workflow
+               (`deploy.yml` if present, otherwise `client.yml` or the workflow
+               that runs tests/build before deploy).
+            2. Reproduce that workflow's verify/test/build job steps locally
+               (install deps, unit tests, production build/lint). Skip remote
+               deploy/SSH/SCP/docker-publish steps.
+            3. If any verify step fails, fix the underlying application code
+               (for example missing imports / eslint `no-undef` during build),
+               re-run the failing commands until they pass, then commit and
+               push to the default branch with a clear message.
+            4. Pushing to the default branch must happen after fixes so CI/Deploy
+               restarts automatically. Do not finish while verify is still red.
+            5. Also check recent failed CI runs for this head SHA
+               (`gh run list --branch <default> --limit 8` and
+               `gh run view <id> --log-failed`) and fix those failures even if
+               they are outside the narrow commit-range review.
+
+            Do not change unrelated code, weaken tests, rewrite history, or
+            edit workflow files. If no code changes are needed and verify is
+            already green locally, leave the repository untouched and summarize
+            the checks performed. Never create another commit solely to report
+            results.
+
+      - name: Restart CI/Deploy verify on latest default branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          DEFAULT_BRANCH="$(gh repo view "${{ github.repository }}" --json defaultBranchRef --jq .defaultBranchRef.name)"
+          git fetch origin "$DEFAULT_BRANCH"
+          LATEST="$(git rev-parse "origin/${DEFAULT_BRANCH}")"
+          echo "Default branch ${DEFAULT_BRANCH} @ ${LATEST}"
+
+          WF=""
+          if gh workflow list --repo "${{ github.repository }}" --json path --jq '.[].path' | grep -q 'deploy.yml'; then
+            WF="deploy.yml"
+          elif gh workflow list --repo "${{ github.repository }}" --json path --jq '.[].path' | grep -q 'client.yml'; then
+            WF="client.yml"
+          else
+            echo "No deploy.yml/client.yml found; skipping restart"
+            exit 0
+          fi
+
+          echo "Restarting ${WF} on ${DEFAULT_BRANCH}"
+          gh workflow run "$WF" \
+            --repo "${{ github.repository }}" \
+            --ref "$DEFAULT_BRANCH"
+          echo "Queued ${WF} workflow_dispatch"
