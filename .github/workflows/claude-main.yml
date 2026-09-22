@@ -11,6 +11,17 @@ on:
       head_sha:
         description: End commit of the pushed range
         required: true
+      reason:
+        description: push_review or verify_failure
+        required: false
+        default: push_review
+      failed_run_id:
+        description: Failed Deploy/CI run id when reason=verify_failure
+        required: false
+        default: ""
+  workflow_run:
+    workflows: ["Deploy", "Client CI/CD"]
+    types: [completed]
 
 concurrency:
   group: claude-main-review
@@ -33,7 +44,62 @@ jobs:
             --repo "${{ github.repository }}" \
             --ref "$DEFAULT_BRANCH" \
             -f before_sha="${{ github.event.before }}" \
-            -f head_sha="${{ github.sha }}"
+            -f head_sha="${{ github.sha }}" \
+            -f reason=push_review \
+            -f failed_run_id=""
+
+  requeue-on-verify-failure:
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Queue Claude only for verify/build failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          FAILED_JOBS="$(gh run view "$RUN_ID" --repo "$REPO" --json jobs \
+            --jq '[.jobs[] | select(.conclusion=="failure") | .name] | join(",")')"
+          echo "Failed jobs: ${FAILED_JOBS}"
+
+          if ! echo "$FAILED_JOBS" | grep -qiE 'verify|build|test'; then
+            echo "Failure is not verify/build/test (likely remote deploy). Skipping Claude."
+            exit 0
+          fi
+
+          # Stop infinite loops: Claude already succeeded 2+ times while tip SHA unchanged.
+          TIP="$(gh api "repos/${REPO}/commits/main" --jq .sha)"
+          if [ "$TIP" = "$HEAD_SHA" ]; then
+            CLAUDE_TRIES="$(gh run list --repo "$REPO" --workflow=claude-main.yml --limit 30 \
+              --json event,conclusion,createdAt,headSha \
+              --jq "[.[] | select(.event==\"workflow_dispatch\" and .conclusion==\"success\" and .headSha==\"$HEAD_SHA\")] | length")"
+            echo "Successful Claude dispatch runs on this SHA: ${CLAUDE_TRIES}"
+            if [ "${CLAUDE_TRIES}" -ge 2 ]; then
+              echo "Claude already tried this tip twice without a new commit. Stopping."
+              exit 0
+            fi
+          fi
+
+          BEFORE="$(gh api "repos/${REPO}/commits/${HEAD_SHA}" --jq '.parents[0].sha // .sha')"
+          DEFAULT_BRANCH="$(gh repo view "$REPO" --json defaultBranchRef --jq .defaultBranchRef.name)"
+
+          echo "Re-queue Claude for failed run ${RUN_ID} at ${HEAD_SHA}"
+          gh workflow run claude-main.yml \
+            --repo "$REPO" \
+            --ref "$DEFAULT_BRANCH" \
+            -f before_sha="$BEFORE" \
+            -f head_sha="$HEAD_SHA" \
+            -f reason=verify_failure \
+            -f failed_run_id="$RUN_ID"
 
   review-fix-test:
     if: github.event_name == 'workflow_dispatch'
@@ -51,44 +117,124 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.inputs.head_sha }}
 
-      - name: Review main push, fix issues, and add tests
+      - name: Collect failed CI logs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REASON: ${{ github.event.inputs.reason }}
+          FAILED_RUN_ID: ${{ github.event.inputs.failed_run_id }}
+          HEAD_SHA: ${{ github.event.inputs.head_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/claude-ci
+          : > /tmp/claude-ci/failed.log
+          if [ "$REASON" = "verify_failure" ] && [ -n "$FAILED_RUN_ID" ]; then
+            gh run view "$FAILED_RUN_ID" --repo "${{ github.repository }}" --log-failed > /tmp/claude-ci/failed.log 2>&1 || true
+          else
+            FAIL_ID="$(gh run list --repo "${{ github.repository }}" --branch main --limit 15 \
+              --json databaseId,conclusion,headSha,name \
+              --jq "[.[] | select(.conclusion==\"failure\" and .headSha==\"$HEAD_SHA\" and (.name==\"Deploy\" or .name==\"Client CI/CD\"))][0].databaseId // empty")"
+            if [ -n "$FAIL_ID" ]; then
+              gh run view "$FAIL_ID" --repo "${{ github.repository }}" --log-failed > /tmp/claude-ci/failed.log 2>&1 || true
+            fi
+          fi
+          # Keep prompt-sized excerpt
+          head -c 120000 /tmp/claude-ci/failed.log > /tmp/claude-ci/failed.excerpt.log || true
+          echo "Failed log bytes: $(wc -c < /tmp/claude-ci/failed.excerpt.log | tr -d ' ')"
+
+      - name: Review / fix with Claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_bots: "*"
           prompt: |
-            A new push landed on the default branch. Review the commit range
-            ${{ github.event.inputs.before_sha }}..${{ github.event.inputs.head_sha }}
-            and the relevant surrounding code for correctness, regressions,
-            security issues, performance problems, maintainability, and test
-            coverage. Read and follow repository instructions such as CLAUDE.md
-            if present.
+            Reason: ${{ github.event.inputs.reason }}
+            Commit range: ${{ github.event.inputs.before_sha }}..${{ github.event.inputs.head_sha }}
+            Failed run id: ${{ github.event.inputs.failed_run_id }}
 
-            REQUIRED GATE — Deploy/CI verify must be green before you finish:
-            1. Open `.github/workflows/` and find the primary CI workflow
-               (`deploy.yml` if present, otherwise `client.yml` or the workflow
-               that runs tests/build before deploy).
-            2. Reproduce that workflow's verify/test/build job steps locally
-               (install deps, unit tests, production build/lint). Skip remote
-               deploy/SSH/SCP/docker-publish steps.
-            3. If any verify step fails, fix the underlying application code
-               (for example missing imports / eslint `no-undef` during build),
-               re-run the failing commands until they pass, then commit and
-               push to the default branch with a clear message.
-            4. Pushing to the default branch must happen after fixes so CI/Deploy
-               restarts automatically. Do not finish while verify is still red.
-            5. Also check recent failed CI runs for this head SHA
-               (`gh run list --branch <default> --limit 8` and
-               `gh run view <id> --log-failed`) and fix those failures even if
-               they are outside the narrow commit-range review.
+            You own the WHOLE repository tip on the default branch, not just the
+            commit-range diff. Find and fix any application defects that keep
+            Deploy/CI verify red — anywhere in client/server/shared code.
 
-            Do not change unrelated code, weaken tests, rewrite history, or
-            edit workflow files. If no code changes are needed and verify is
-            already green locally, leave the repository untouched and summarize
-            the checks performed. Never create another commit solely to report
-            results.
+            Your job is to make this repository's Deploy/CI verify green.
+            Do NOT only review the commit-range diff. Do NOT skip failures that
+            pre-existed on main.
 
-      - name: Restart CI/Deploy verify on latest default branch
+            First read `/tmp/claude-ci/failed.excerpt.log` if it is non-empty.
+            Those are the actual failing CI logs (often eslint/build/test).
+
+            Then reproduce verify locally across the whole project:
+            - Prefer commands from `.github/workflows/deploy.yml` verify job
+              (or `client.yml` build/test job if there is no deploy.yml).
+            - Skip remote deploy/SSH/SCP/registry publish steps.
+            - Common patterns: `cd client && npm ci && npm test -- --watchAll=false && npm run build`
+              and server tests (`mvn test`, `dotnet test`, `python -m unittest`, docker test image).
+
+            If verify fails, fix the application code wherever it lives in the
+            repo (for example missing imports / eslint `no-undef`), re-run until
+            green, then commit and push to the default branch.
+
+            Do not edit workflow files. Do not weaken tests. Do not finish
+            successfully while local verify still fails. Never create a commit
+            solely to report results.
+
+      - name: Hard verify gate after Claude
+        id: verify
+        run: |
+          set -euo pipefail
+          echo "Running hard verify gate..."
+
+          if [ -f client/package.json ]; then
+            echo "::group::client verify"
+            (cd client && npm ci)
+            (cd client && npm test -- --watchAll=false)
+            (cd client && npm run build)
+            echo "::endgroup::"
+          elif [ -f package.json ]; then
+            echo "::group::root node verify"
+            npm ci
+            if npm run | grep -q ' test'; then npm test -- --watchAll=false; fi
+            if npm run | grep -q ' build'; then npm run build; fi
+            echo "::endgroup::"
+          fi
+
+          if [ -f server/pom.xml ]; then
+            echo "::group::server maven"
+            (cd server && mvn --batch-mode -DfailIfNoTests=true test)
+            echo "::endgroup::"
+          elif [ -f server/mvnw ]; then
+            echo "::group::server mvnw"
+            (cd server && chmod +x mvnw && ./mvnw --batch-mode -DfailIfNoTests=true test)
+            echo "::endgroup::"
+          fi
+
+          if [ -f server/requirements.txt ] || [ -f server/requirements-test.txt ]; then
+            echo "::group::server python"
+            REQ=server/requirements-test.txt
+            [ -f "$REQ" ] || REQ=server/requirements.txt
+            python -m pip install -r "$REQ"
+            if [ -d server/tests ]; then
+              (cd server && python -m unittest discover -s tests -v)
+            fi
+            echo "::endgroup::"
+          fi
+
+          if [ -f requirements.txt ] && [ ! -f client/package.json ]; then
+            echo "::group::root python"
+            python -m pip install -r requirements.txt
+            if [ -d tests ]; then python -m unittest discover -s tests -v; fi
+            echo "::endgroup::"
+          fi
+
+          if ls server/*.sln >/dev/null 2>&1; then
+            echo "::group::server dotnet"
+            dotnet test server/*.sln --configuration Release
+            echo "::endgroup::"
+          fi
+
+          echo "Hard verify gate passed"
+
+      - name: Restart CI/Deploy only after green verify
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
