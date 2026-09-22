@@ -1,4 +1,4 @@
-name: Claude Automatic PR Review
+name: Claude Automatic PR Review, Tests, and Merge
 
 on:
   pull_request:
@@ -9,32 +9,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  review:
+  review-fix-test:
     if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       issues: write
       id-token: write
       actions: read
     steps:
-      - name: Checkout repository
+      - name: Checkout pull request
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Review pull request with Claude
+      - name: Review, fix, and test with Claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           use_sticky_comment: true
+          track_progress: true
           prompt: |
             Review this pull request for correctness, regressions, security issues,
-            performance problems, maintainability, and missing or inadequate tests.
-            Read and follow repository instructions such as CLAUDE.md. Inspect the
-            actual diff and relevant surrounding code. Run relevant existing tests
-            when practical. Report concise, actionable findings with file paths and
-            line references. Do not modify code during this automatic review; provide
-            fix guidance and identify tests that should be added. If there are no
-            material findings, state that clearly.
+            performance problems, maintainability, and test coverage. Read and follow
+            repository instructions such as CLAUDE.md. Inspect the actual diff and
+            relevant surrounding code.
+
+            Fix confirmed defects directly in the current pull-request branch. Add or
+            update focused automated tests for changed behavior and every defect you
+            fix. Run the relevant test, lint, and build commands documented by the
+            repository. Do not change unrelated code or weaken existing tests. Commit
+            and push the code and test changes to the current PR branch. In the final
+            PR comment, summarize findings, files changed, tests added, and commands
+            run. If a safe fix is not possible, leave precise actionable guidance
+            instead of guessing and fail the task so the PR is not merged.
+
+  enable-auto-merge:
+    needs: review-fix-test
+    if: needs.review-fix-test.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Enable squash auto-merge after required checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge "$PR_URL" --auto --squash
