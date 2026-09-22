@@ -19,13 +19,18 @@ on:
         description: Failed Deploy/CI run id when reason=verify_failure
         required: false
         default: ""
+      attempt:
+        description: Retry attempt number
+        required: false
+        default: "1"
   workflow_run:
     workflows: ["Deploy", "Client CI/CD"]
     types: [completed]
 
+# Do not cancel an in-progress Claude fix when another event fires.
 concurrency:
-  group: claude-main-review
-  cancel-in-progress: true
+  group: claude-fix-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
   dispatch:
@@ -46,7 +51,8 @@ jobs:
             -f before_sha="${{ github.event.before }}" \
             -f head_sha="${{ github.sha }}" \
             -f reason=push_review \
-            -f failed_run_id=""
+            -f failed_run_id="" \
+            -f attempt=1
 
   requeue-on-verify-failure:
     if: |
@@ -76,17 +82,26 @@ jobs:
             exit 0
           fi
 
-          # Stop infinite loops: Claude already succeeded 2+ times while tip SHA unchanged.
+          # Stop loops if tip unchanged and Claude already dispatched many times for it.
           TIP="$(gh api "repos/${REPO}/commits/main" --jq .sha)"
           if [ "$TIP" = "$HEAD_SHA" ]; then
-            CLAUDE_TRIES="$(gh run list --repo "$REPO" --workflow=claude-main.yml --limit 30 \
-              --json event,conclusion,createdAt,headSha \
-              --jq "[.[] | select(.event==\"workflow_dispatch\" and .conclusion==\"success\" and .headSha==\"$HEAD_SHA\")] | length")"
-            echo "Successful Claude dispatch runs on this SHA: ${CLAUDE_TRIES}"
-            if [ "${CLAUDE_TRIES}" -ge 2 ]; then
-              echo "Claude already tried this tip twice without a new commit. Stopping."
+            CLAUDE_TRIES="$(gh run list --repo "$REPO" --workflow=claude-main.yml --limit 40 \
+              --json event,conclusion,headSha \
+              --jq "[.[] | select(.event==\"workflow_dispatch\" and .headSha==\"$HEAD_SHA\")] | length")"
+            echo "Claude dispatch runs on this SHA: ${CLAUDE_TRIES}"
+            if [ "${CLAUDE_TRIES}" -ge 5 ]; then
+              echo "Too many Claude attempts on this tip without a new commit. Stopping."
               exit 0
             fi
+          fi
+
+          # Skip if a Claude dispatch is already queued/in progress
+          ACTIVE="$(gh run list --repo "$REPO" --workflow=claude-main.yml --limit 10 \
+            --json status,event \
+            --jq '[.[] | select(.event=="workflow_dispatch" and (.status=="queued" or .status=="in_progress" or .status=="pending"))] | length')"
+          if [ "${ACTIVE}" -gt 0 ]; then
+            echo "Claude already queued/running. Skipping duplicate requeue."
+            exit 0
           fi
 
           BEFORE="$(gh api "repos/${REPO}/commits/${HEAD_SHA}" --jq '.parents[0].sha // .sha')"
@@ -99,7 +114,8 @@ jobs:
             -f before_sha="$BEFORE" \
             -f head_sha="$HEAD_SHA" \
             -f reason=verify_failure \
-            -f failed_run_id="$RUN_ID"
+            -f failed_run_id="$RUN_ID" \
+            -f attempt=1
 
   review-fix-test:
     if: github.event_name == 'workflow_dispatch'
@@ -111,124 +127,172 @@ jobs:
       id-token: write
       actions: write
     steps:
-      - name: Checkout main at pushed commit
+      - name: Checkout tip (always latest main if tip moved)
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event.inputs.head_sha }}
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Collect failed CI logs
+      - name: Collect CI + local verify evidence
+        id: evidence
         env:
           GH_TOKEN: ${{ github.token }}
           REASON: ${{ github.event.inputs.reason }}
           FAILED_RUN_ID: ${{ github.event.inputs.failed_run_id }}
           HEAD_SHA: ${{ github.event.inputs.head_sha }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           mkdir -p /tmp/claude-ci
-          : > /tmp/claude-ci/failed.log
+          : > /tmp/claude-ci/ci-failed.log
+          : > /tmp/claude-ci/local-verify.log
+
           if [ "$REASON" = "verify_failure" ] && [ -n "$FAILED_RUN_ID" ]; then
-            gh run view "$FAILED_RUN_ID" --repo "${{ github.repository }}" --log-failed > /tmp/claude-ci/failed.log 2>&1 || true
+            gh run view "$FAILED_RUN_ID" --repo "${{ github.repository }}" --log-failed > /tmp/claude-ci/ci-failed.log 2>&1 || true
           else
-            FAIL_ID="$(gh run list --repo "${{ github.repository }}" --branch main --limit 15 \
+            FAIL_ID="$(gh run list --repo "${{ github.repository }}" --branch main --limit 20 \
               --json databaseId,conclusion,headSha,name \
-              --jq "[.[] | select(.conclusion==\"failure\" and .headSha==\"$HEAD_SHA\" and (.name==\"Deploy\" or .name==\"Client CI/CD\"))][0].databaseId // empty")"
-            if [ -n "$FAIL_ID" ]; then
-              gh run view "$FAIL_ID" --repo "${{ github.repository }}" --log-failed > /tmp/claude-ci/failed.log 2>&1 || true
+              --jq "[.[] | select(.conclusion==\"failure\" and (.name==\"Deploy\" or .name==\"Client CI/CD\"))][0].databaseId // empty" || true)"
+            if [ -n "${FAIL_ID:-}" ]; then
+              gh run view "$FAIL_ID" --repo "${{ github.repository }}" --log-failed > /tmp/claude-ci/ci-failed.log 2>&1 || true
             fi
           fi
-          # Keep prompt-sized excerpt
-          head -c 120000 /tmp/claude-ci/failed.log > /tmp/claude-ci/failed.excerpt.log || true
-          echo "Failed log bytes: $(wc -c < /tmp/claude-ci/failed.excerpt.log | tr -d ' ')"
+
+          run_local_verify() {
+            set +e
+            if [ -f client/package.json ]; then
+              (cd client && npm ci && npm test -- --watchAll=false && npm run build) >> /tmp/claude-ci/local-verify.log 2>&1
+              return $?
+            fi
+            if [ -f package.json ]; then
+              (npm ci && npm test -- --watchAll=false && npm run build) >> /tmp/claude-ci/local-verify.log 2>&1
+              return $?
+            fi
+            if [ -f server/pom.xml ]; then
+              (cd server && mvn --batch-mode -DfailIfNoTests=true test) >> /tmp/claude-ci/local-verify.log 2>&1
+              return $?
+            fi
+            if [ -f server/mvnw ]; then
+              (cd server && chmod +x mvnw && ./mvnw --batch-mode -DfailIfNoTests=true test) >> /tmp/claude-ci/local-verify.log 2>&1
+              return $?
+            fi
+            if [ -f server/requirements.txt ] || [ -f server/requirements-test.txt ]; then
+              REQ=server/requirements-test.txt
+              [ -f "$REQ" ] || REQ=server/requirements.txt
+              (python -m pip install -r "$REQ" && cd server && python -m unittest discover -s tests -v) >> /tmp/claude-ci/local-verify.log 2>&1
+              return $?
+            fi
+            if [ -f requirements.txt ]; then
+              (python -m pip install -r requirements.txt && python -m unittest discover -s tests -v) >> /tmp/claude-ci/local-verify.log 2>&1
+              return $?
+            fi
+            if ls server/*.sln >/dev/null 2>&1; then
+              (dotnet test server/*.sln --configuration Release) >> /tmp/claude-ci/local-verify.log 2>&1
+              return $?
+            fi
+            echo "No known verify commands detected" >> /tmp/claude-ci/local-verify.log
+            return 0
+          }
+
+          run_local_verify
+          echo "local_exit=$?" >> "$GITHUB_OUTPUT"
+          echo "Local verify log bytes: $(wc -c < /tmp/claude-ci/local-verify.log | tr -d ' ')"
+          echo "CI failed log bytes: $(wc -c < /tmp/claude-ci/ci-failed.log | tr -d ' ')"
+
+      - name: Build Claude prompt with embedded errors
+        id: prompt
+        uses: actions/github-script@v7
+        env:
+          BEFORE_SHA: ${{ github.event.inputs.before_sha }}
+          HEAD_SHA: ${{ github.event.inputs.head_sha }}
+          REASON: ${{ github.event.inputs.reason }}
+          FAILED_RUN_ID: ${{ github.event.inputs.failed_run_id }}
+          ATTEMPT: ${{ github.event.inputs.attempt }}
+          LOCAL_EXIT: ${{ steps.evidence.outputs.local_exit }}
+        with:
+          script: |
+            const fs = require('fs');
+            const local = fs.existsSync('/tmp/claude-ci/local-verify.log')
+              ? fs.readFileSync('/tmp/claude-ci/local-verify.log', 'utf8').slice(-24000)
+              : '';
+            const ci = fs.existsSync('/tmp/claude-ci/ci-failed.log')
+              ? fs.readFileSync('/tmp/claude-ci/ci-failed.log', 'utf8').slice(-16000)
+              : '';
+            const prompt = [
+              `Reason: ${process.env.REASON}`,
+              `Attempt: ${process.env.ATTEMPT}`,
+              `Commit range: ${process.env.BEFORE_SHA}..${process.env.HEAD_SHA}`,
+              `Failed run id: ${process.env.FAILED_RUN_ID}`,
+              `Local verify exit code BEFORE you start: ${process.env.LOCAL_EXIT}`,
+              '',
+              'You own the WHOLE repository tip on main, not just the commit-range diff.',
+              'Work exactly like a developer fixing a red CI build:',
+              '1) Read the LOCAL VERIFY OUTPUT below (path + line + error).',
+              '2) Open that file and fix the reported error.',
+              '3) Re-run the same verify commands until they pass.',
+              '4) Commit and push to main.',
+              'Your ONLY success condition: local verify is green AND fixes are pushed if anything was broken.',
+              'Do not stop after reading code. Do not claim success while verify is red.',
+              '',
+              '=== LOCAL VERIFY OUTPUT (authoritative — fix these errors) ===',
+              local || '(empty)',
+              '=== END LOCAL VERIFY OUTPUT ===',
+              '',
+              '=== CI FAILED LOG EXCERPT ===',
+              ci || '(empty)',
+              '=== END CI FAILED LOG ===',
+              '',
+              'Reproduce verify with the same commands as deploy.yml / client.yml verify jobs',
+              '(skip remote deploy/SSH). Typical client: cd client && npm ci && npm test -- --watchAll=false && npm run build',
+              'Fix application code anywhere in the repo based on the log (missing imports, eslint no-undef, tests, etc).',
+              'Re-run verify until green, then commit and push to main.',
+              'Do not edit workflow files. Do not weaken tests. Never create a commit only to report results.',
+            ].join('\n');
+            core.setOutput('text', prompt);
 
       - name: Review / fix with Claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_bots: "*"
-          prompt: |
-            Reason: ${{ github.event.inputs.reason }}
-            Commit range: ${{ github.event.inputs.before_sha }}..${{ github.event.inputs.head_sha }}
-            Failed run id: ${{ github.event.inputs.failed_run_id }}
-
-            You own the WHOLE repository tip on the default branch, not just the
-            commit-range diff. Find and fix any application defects that keep
-            Deploy/CI verify red — anywhere in client/server/shared code.
-
-            Your job is to make this repository's Deploy/CI verify green.
-            Do NOT only review the commit-range diff. Do NOT skip failures that
-            pre-existed on main.
-
-            First read `/tmp/claude-ci/failed.excerpt.log` if it is non-empty.
-            Those are the actual failing CI logs (often eslint/build/test).
-
-            Then reproduce verify locally across the whole project:
-            - Prefer commands from `.github/workflows/deploy.yml` verify job
-              (or `client.yml` build/test job if there is no deploy.yml).
-            - Skip remote deploy/SSH/SCP/registry publish steps.
-            - Common patterns: `cd client && npm ci && npm test -- --watchAll=false && npm run build`
-              and server tests (`mvn test`, `dotnet test`, `python -m unittest`, docker test image).
-
-            If verify fails, fix the application code wherever it lives in the
-            repo (for example missing imports / eslint `no-undef`), re-run until
-            green, then commit and push to the default branch.
-
-            Do not edit workflow files. Do not weaken tests. Do not finish
-            successfully while local verify still fails. Never create a commit
-            solely to report results.
+          show_full_output: true
+          prompt: ${{ steps.prompt.outputs.text }}
 
       - name: Hard verify gate after Claude
         id: verify
         run: |
           set -euo pipefail
+          : > /tmp/claude-ci/post-verify.log
           echo "Running hard verify gate..."
 
           if [ -f client/package.json ]; then
-            echo "::group::client verify"
-            (cd client && npm ci)
-            (cd client && npm test -- --watchAll=false)
-            (cd client && npm run build)
-            echo "::endgroup::"
+            (cd client && npm ci && npm test -- --watchAll=false && npm run build) 2>&1 | tee /tmp/claude-ci/post-verify.log
           elif [ -f package.json ]; then
-            echo "::group::root node verify"
-            npm ci
-            if npm run | grep -q ' test'; then npm test -- --watchAll=false; fi
-            if npm run | grep -q ' build'; then npm run build; fi
-            echo "::endgroup::"
+            (npm ci && npm test -- --watchAll=false && npm run build) 2>&1 | tee /tmp/claude-ci/post-verify.log
           fi
 
           if [ -f server/pom.xml ]; then
-            echo "::group::server maven"
-            (cd server && mvn --batch-mode -DfailIfNoTests=true test)
-            echo "::endgroup::"
+            (cd server && mvn --batch-mode -DfailIfNoTests=true test) 2>&1 | tee -a /tmp/claude-ci/post-verify.log
           elif [ -f server/mvnw ]; then
-            echo "::group::server mvnw"
-            (cd server && chmod +x mvnw && ./mvnw --batch-mode -DfailIfNoTests=true test)
-            echo "::endgroup::"
+            (cd server && chmod +x mvnw && ./mvnw --batch-mode -DfailIfNoTests=true test) 2>&1 | tee -a /tmp/claude-ci/post-verify.log
           fi
 
           if [ -f server/requirements.txt ] || [ -f server/requirements-test.txt ]; then
-            echo "::group::server python"
             REQ=server/requirements-test.txt
             [ -f "$REQ" ] || REQ=server/requirements.txt
             python -m pip install -r "$REQ"
             if [ -d server/tests ]; then
-              (cd server && python -m unittest discover -s tests -v)
+              (cd server && python -m unittest discover -s tests -v) 2>&1 | tee -a /tmp/claude-ci/post-verify.log
             fi
-            echo "::endgroup::"
           fi
 
           if [ -f requirements.txt ] && [ ! -f client/package.json ]; then
-            echo "::group::root python"
             python -m pip install -r requirements.txt
-            if [ -d tests ]; then python -m unittest discover -s tests -v; fi
-            echo "::endgroup::"
+            if [ -d tests ]; then python -m unittest discover -s tests -v 2>&1 | tee -a /tmp/claude-ci/post-verify.log; fi
           fi
 
           if ls server/*.sln >/dev/null 2>&1; then
-            echo "::group::server dotnet"
-            dotnet test server/*.sln --configuration Release
-            echo "::endgroup::"
+            dotnet test server/*.sln --configuration Release 2>&1 | tee -a /tmp/claude-ci/post-verify.log
           fi
 
           echo "Hard verify gate passed"
@@ -241,8 +305,6 @@ jobs:
           set -euo pipefail
           DEFAULT_BRANCH="$(gh repo view "${{ github.repository }}" --json defaultBranchRef --jq .defaultBranchRef.name)"
           git fetch origin "$DEFAULT_BRANCH"
-          LATEST="$(git rev-parse "origin/${DEFAULT_BRANCH}")"
-          echo "Default branch ${DEFAULT_BRANCH} @ ${LATEST}"
 
           WF=""
           if gh workflow list --repo "${{ github.repository }}" --json path --jq '.[].path' | grep -q 'deploy.yml'; then
@@ -255,7 +317,33 @@ jobs:
           fi
 
           echo "Restarting ${WF} on ${DEFAULT_BRANCH}"
-          gh workflow run "$WF" \
+          gh workflow run "$WF" --repo "${{ github.repository }}" --ref "$DEFAULT_BRANCH"
+
+      - name: Requeue Claude if verify still red
+        if: failure() && steps.verify.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATTEMPT: ${{ github.event.inputs.attempt }}
+        run: |
+          set -euo pipefail
+          NEXT=$(( ${ATTEMPT:-1} + 1 ))
+          if [ "$NEXT" -gt 3 ]; then
+            echo "Claude failed verify gate 3 times. Stopping requeue."
+            exit 1
+          fi
+
+          DEFAULT_BRANCH="$(gh repo view "${{ github.repository }}" --json defaultBranchRef --jq .defaultBranchRef.name)"
+          git fetch origin "$DEFAULT_BRANCH"
+          HEAD="$(git rev-parse "origin/${DEFAULT_BRANCH}")"
+          BEFORE="$(gh api "repos/${{ github.repository }}/commits/${HEAD}" --jq '.parents[0].sha // .sha')"
+
+          echo "Requeue Claude attempt ${NEXT} for ${HEAD}"
+          gh workflow run claude-main.yml \
             --repo "${{ github.repository }}" \
-            --ref "$DEFAULT_BRANCH"
-          echo "Queued ${WF} workflow_dispatch"
+            --ref "$DEFAULT_BRANCH" \
+            -f before_sha="$BEFORE" \
+            -f head_sha="$HEAD" \
+            -f reason=verify_failure \
+            -f failed_run_id="${{ github.event.inputs.failed_run_id }}" \
+            -f attempt="$NEXT"
+          exit 1
