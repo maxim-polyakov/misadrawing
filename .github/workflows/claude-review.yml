@@ -34,17 +34,28 @@ jobs:
           prompt: |
             Review this pull request for correctness, regressions, security issues,
             performance problems, maintainability, and test coverage. Read and follow
-            repository instructions such as CLAUDE.md. Inspect the actual diff and
-            relevant surrounding code.
+            repository instructions such as CLAUDE.md if present. Inspect the actual
+            diff and relevant surrounding code.
 
             Fix confirmed defects directly in the current pull-request branch. Add or
             update focused automated tests for changed behavior and every defect you
-            fix. Run the relevant test, lint, and build commands documented by the
-            repository. Do not change unrelated code or weaken existing tests. Commit
-            and push the code and test changes to the current PR branch. In the final
-            PR comment, summarize findings, files changed, tests added, and commands
+            fix.
+
+            REQUIRED GATE — CI verify must be green before you finish:
+            1. Open `.github/workflows/` and find the primary CI workflow
+               (`deploy.yml` if present, otherwise `client.yml` or the workflow that
+               runs tests/build before deploy).
+            2. Reproduce that workflow's verify/test/build job steps locally
+               (install deps, unit tests, production build/lint). Skip remote
+               deploy/SSH/SCP/docker-publish steps.
+            3. If any verify step fails, fix the code and re-run until green.
+
+            Do not change unrelated code or weaken existing tests. Commit and push
+            the code and test changes to the current PR branch. In the final PR
+            comment, summarize findings, files changed, tests added, and commands
             run. If a safe fix is not possible, leave precise actionable guidance
-            instead of guessing and fail the task so the PR is not merged.
+            instead of guessing and fail the task so the PR is not merged. Do not
+            finish successfully while verify commands are still failing.
 
   enable-auto-merge:
     needs: review-fix-test
