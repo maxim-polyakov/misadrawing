@@ -1,0 +1,40 @@
+name: Claude Automatic PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Review pull request with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          use_sticky_comment: true
+          prompt: |
+            Review this pull request for correctness, regressions, security issues,
+            performance problems, maintainability, and missing or inadequate tests.
+            Read and follow repository instructions such as CLAUDE.md. Inspect the
+            actual diff and relevant surrounding code. Run relevant existing tests
+            when practical. Report concise, actionable findings with file paths and
+            line references. Do not modify code during this automatic review; provide
+            fix guidance and identify tests that should be added. If there are no
+            material findings, state that clearly.
