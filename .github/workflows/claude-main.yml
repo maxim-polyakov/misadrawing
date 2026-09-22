@@ -3,14 +3,39 @@ name: Claude Main Branch Review and Tests
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      before_sha:
+        description: Start commit of the pushed range
+        required: true
+      head_sha:
+        description: End commit of the pushed range
+        required: true
 
 concurrency:
   group: claude-main-review
   cancel-in-progress: true
 
 jobs:
+  dispatch:
+    if: github.event_name == 'push' && github.actor != 'claude[bot]' && github.event.head_commit != null
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Queue Claude main review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run claude-main.yml \
+            --repo "${{ github.repository }}" \
+            --ref main \
+            -f before_sha="${{ github.event.before }}" \
+            -f head_sha="${{ github.sha }}"
+
   review-fix-test:
-    if: github.actor != 'claude[bot]' && github.event.head_commit != null
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,27 +44,29 @@ jobs:
       id-token: write
       actions: read
     steps:
-      - name: Checkout main
+      - name: Checkout main at pushed commit
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: main
+          ref: ${{ github.event.inputs.head_sha }}
 
       - name: Review main push, fix issues, and add tests
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_bots: "*"
           prompt: |
             A new push landed on the main branch. Review the commit range
-            ${{ github.event.before }}..${{ github.sha }} and the relevant surrounding
-            code for correctness, regressions, security issues, performance problems,
-            maintainability, and test coverage. Read and follow repository instructions
-            such as CLAUDE.md.
+            ${{ github.event.inputs.before_sha }}..${{ github.event.inputs.head_sha }}
+            and the relevant surrounding code for correctness, regressions,
+            security issues, performance problems, maintainability, and test
+            coverage. Read and follow repository instructions such as CLAUDE.md.
 
-            Fix confirmed defects directly on main. Add or update focused automated
-            tests for changed behavior and every defect you fix. Run the relevant test,
-            lint, and build commands documented by the repository. Do not change
-            unrelated code, weaken tests, rewrite history, or edit workflow files.
-            If changes are needed, commit and push them to main with a clear message.
-            If no changes are needed, leave the repository untouched and summarize the
-            checks performed. Never create another commit solely to report results.
+            Fix confirmed defects directly on main. Add or update focused
+            automated tests for changed behavior and every defect you fix. Run
+            the relevant test, lint, and build commands documented by the
+            repository. Do not change unrelated code, weaken tests, rewrite
+            history, or edit workflow files. If changes are needed, commit and
+            push them to main with a clear message. If no changes are needed,
+            leave the repository untouched and summarize the checks performed.
+            Never create another commit solely to report results.
