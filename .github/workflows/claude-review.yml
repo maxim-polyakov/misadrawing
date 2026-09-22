@@ -31,6 +31,10 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           use_sticky_comment: true
           track_progress: true
+          show_full_output: true
+          claude_args: |
+            --permission-mode acceptEdits
+            --allowedTools Edit,Write,Bash,Read,Glob,Grep
           prompt: |
             Review this pull request for correctness, regressions, security issues,
             performance problems, maintainability, and test coverage. Read and follow
