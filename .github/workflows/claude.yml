@@ -23,7 +23,7 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
-      actions: read
+      actions: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -35,3 +35,12 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: true
+          prompt: |
+            Follow the user's @claude request.
+
+            When fixing bugs or CI failures, also run this repository's Deploy/CI
+            verify steps from `.github/workflows/deploy.yml` (or `client.yml` if
+            there is no deploy.yml): install deps, tests, and production build.
+            Skip remote deploy/SSH steps. If verify fails, fix the code, re-run
+            until green, then commit and push so CI/Deploy restarts. Do not edit
+            workflow files unless the user explicitly asks.
