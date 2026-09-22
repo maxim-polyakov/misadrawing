@@ -212,41 +212,45 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const local = fs.existsSync('/tmp/claude-ci/local-verify.log')
-              ? fs.readFileSync('/tmp/claude-ci/local-verify.log', 'utf8').slice(-24000)
+            const localRaw = fs.existsSync('/tmp/claude-ci/local-verify.log')
+              ? fs.readFileSync('/tmp/claude-ci/local-verify.log', 'utf8')
               : '';
-            const ci = fs.existsSync('/tmp/claude-ci/ci-failed.log')
-              ? fs.readFileSync('/tmp/claude-ci/ci-failed.log', 'utf8').slice(-16000)
+            // Prefer the compile/eslint failure block; drop npm deprecation noise.
+            let local = localRaw;
+            const failIdx = localRaw.lastIndexOf('Failed to compile');
+            if (failIdx >= 0) {
+              local = localRaw.slice(failIdx, failIdx + 4000);
+            } else {
+              local = localRaw.slice(-8000);
+            }
+            const ciRaw = fs.existsSync('/tmp/claude-ci/ci-failed.log')
+              ? fs.readFileSync('/tmp/claude-ci/ci-failed.log', 'utf8')
               : '';
+            let ci = ciRaw;
+            const ciFailIdx = ciRaw.lastIndexOf('Failed to compile');
+            if (ciFailIdx >= 0) {
+              ci = ciRaw.slice(ciFailIdx, ciFailIdx + 4000);
+            } else {
+              ci = ciRaw.slice(-6000);
+            }
             const prompt = [
               `Reason: ${process.env.REASON}`,
               `Attempt: ${process.env.ATTEMPT}`,
-              `Commit range: ${process.env.BEFORE_SHA}..${process.env.HEAD_SHA}`,
-              `Failed run id: ${process.env.FAILED_RUN_ID}`,
               `Local verify exit code BEFORE you start: ${process.env.LOCAL_EXIT}`,
               '',
-              'You own the WHOLE repository tip on main, not just the commit-range diff.',
-              'Work exactly like a developer fixing a red CI build:',
-              '1) Read the LOCAL VERIFY OUTPUT below (path + line + error).',
-              '2) Open that file and fix the reported error.',
-              '3) Re-run the same verify commands until they pass.',
-              '4) Commit and push to main.',
-              'Your ONLY success condition: local verify is green AND fixes are pushed if anything was broken.',
-              'Do not stop after reading code. Do not claim success while verify is red.',
+              'FIX THE BUILD FAILURE BELOW. You already have Edit/Write/Bash permissions.',
+              'Do not only analyze — apply the code change, re-run verify, commit and push.',
               '',
-              '=== LOCAL VERIFY OUTPUT (authoritative — fix these errors) ===',
+              '=== BUILD ERROR (fix this) ===',
               local || '(empty)',
-              '=== END LOCAL VERIFY OUTPUT ===',
+              '=== END BUILD ERROR ===',
               '',
-              '=== CI FAILED LOG EXCERPT ===',
+              '=== CI LOG EXCERPT ===',
               ci || '(empty)',
-              '=== END CI FAILED LOG ===',
+              '=== END CI LOG ===',
               '',
-              'Reproduce verify with the same commands as deploy.yml / client.yml verify jobs',
-              '(skip remote deploy/SSH). Typical client: cd client && npm ci && npm test -- --watchAll=false && npm run build',
-              'Fix application code anywhere in the repo based on the log (missing imports, eslint no-undef, tests, etc).',
-              'Re-run verify until green, then commit and push to main.',
-              'Do not edit workflow files. Do not weaken tests. Never create a commit only to report results.',
+              'Typical verify: cd client && npm ci && npm test -- --watchAll=false && npm run build',
+              'Do not edit workflow files. Do not weaken tests.',
             ].join('\n');
             core.setOutput('text', prompt);
 
@@ -256,6 +260,10 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_bots: "*"
           show_full_output: true
+          # Without acceptEdits, Claude finds the fix but Edit/Bash are denied in CI.
+          claude_args: |
+            --permission-mode acceptEdits
+            --allowedTools Edit,Write,Bash,Read,Glob,Grep
           prompt: ${{ steps.prompt.outputs.text }}
 
       - name: Hard verify gate after Claude
