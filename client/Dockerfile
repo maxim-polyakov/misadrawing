@@ -1,4 +1,4 @@
-FROM node:24-alpine
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
@@ -10,8 +10,16 @@ RUN yarn --frozen-lockfile
 COPY . .
 RUN yarn build
 
+FROM node:24-alpine
+
+WORKDIR /app
+
 # Устанавливаем serve для отдачи статики
-RUN yarn global add serve
+RUN yarn global add serve && yarn cache clean
+
+# В итоговый образ попадает только собранная статика (без node_modules),
+# чтобы образ был маленьким и быстро импортировался в k3s
+COPY --from=build /app/build ./build
 
 EXPOSE 3000
 
