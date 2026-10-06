@@ -81,7 +81,5 @@ jobs:
           envs: DEPLOY_PATH
           script_stop: true
           script: |
-            cd "$DEPLOY_PATH"
-            docker compose down --remove-orphans
-            docker compose build
-            docker compose up -d --remove-orphans
+            sudo -n /usr/local/sbin/compose-k3s-sync \
+              --project-dir "$DEPLOY_PATH"
