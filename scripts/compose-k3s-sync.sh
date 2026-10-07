@@ -108,8 +108,19 @@ if [[ -n "$project_name_override" ]]; then
   compose+=(-p "$project_name_override")
 fi
 kube=(k3s kubectl)
-kubeconfig=${COMPOSE_K3S_KUBECONFIG:-/etc/rancher/k3s/compose-sync.yaml}
-if [[ -f "$kubeconfig" ]]; then
+kubeconfig=${COMPOSE_K3S_KUBECONFIG:-}
+if [[ -z "$kubeconfig" || ! -r "$kubeconfig" ]]; then
+  for candidate in \
+    /etc/rancher/k3s/compose-sync.yaml \
+    "${HOME}/.kube/config" \
+    /etc/rancher/k3s/k3s.yaml; do
+    if [[ -r "$candidate" ]]; then
+      kubeconfig=$candidate
+      break
+    fi
+  done
+fi
+if [[ -n "$kubeconfig" && -r "$kubeconfig" ]]; then
   kube+=(--kubeconfig "$kubeconfig")
 fi
 if [[ -n "$compose_file" ]]; then
