@@ -20,8 +20,8 @@ Options:
   -h, --help              Show this help
 
 Environment:
-  COMPOSE_K3S_EXTRA_NAMESERVERS   Public resolvers for Maildev/SMTP pods (default: 8.8.8.8,1.1.1.1)
-  COMPOSE_K3S_SKIP_SMTP_DNS       Set to 1 to skip SMTP/Maildev external DNS patch
+  COMPOSE_K3S_EXTRA_NAMESERVERS   Public DNS for Maildev/SMTP Deployments (default: 8.8.8.8,1.1.1.1)
+  COMPOSE_K3S_SKIP_SMTP_DNS       Set to 1 to skip Maildev dnsConfig on the Deployment
 EOF
 }
 
@@ -324,6 +324,48 @@ for row in "${sync_services[@]}"; do
     -o jsonpath='{.spec.template.spec.containers[0].name}')
   [[ -n "$container" ]] || die "cannot determine container for $namespace/$deployment"
 
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
+    -p='[{"op":"remove","path":"/spec/template/spec/hostAliases"}]' >/dev/null 2>&1 || true
+
+  if [[ "$dry_run" != true && "$service" == *smtp* && "${COMPOSE_K3S_SKIP_SMTP_DNS:-}" != 1 ]]; then
+    maildev_dns_patch=$(
+      COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}" \
+      NS="$namespace" python3 -c '
+import json, os
+ns = os.environ["NS"]
+servers = [
+    s.strip()
+    for s in os.environ.get("COMPOSE_K3S_EXTRA_NAMESERVERS", "8.8.8.8,1.1.1.1").split(",")
+    if s.strip()
+]
+print(
+    json.dumps(
+        {
+            "spec": {
+                "template": {
+                    "spec": {
+                        "dnsConfig": {
+                            "nameservers": servers,
+                            "searches": [
+                                f"{ns}.svc.cluster.local",
+                                "svc.cluster.local",
+                                "cluster.local",
+                            ],
+                            "options": [{"name": "ndots", "value": "5"}],
+                        }
+                    }
+                }
+            }
+        }
+    )
+)
+'
+    )
+    "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
+      -p "$maildev_dns_patch" >/dev/null
+    log "Maildev/SMTP Deployment dnsConfig set for $namespace/$deployment"
+  fi
+
   # hostPort workloads cannot use maxSurge on a single pinned node.
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
     -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}' >/dev/null
@@ -343,118 +385,5 @@ for row in "${sync_services[@]}"; do
 done
 
 ((matched_services > 0)) || die "no matching Deployments found for $kube_project"
-
-if [[ "$dry_run" != true ]]; then
-  # Internal traffic uses ClusterIP + CoreDNS. Maildev auto-relay needs public DNS when
-  # cluster DNS to the internet is flaky on pinned workers.
-  export COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}"
-  log "SMTP/Maildev external DNS patch for $kube_project (no hostAliases)"
-  python3 - "$kube_project" "${kube[@]}" <<'PY'
-import json
-import os
-import subprocess
-import sys
-
-kube_project = sys.argv[1]
-kube = sys.argv[2:]
-
-def kubectl(*args, check=True):
-    return subprocess.run(
-        [*kube, *args],
-        check=check,
-        capture_output=True,
-        text=True,
-    )
-
-
-extra_ns_raw = os.environ.get("COMPOSE_K3S_EXTRA_NAMESERVERS", "8.8.8.8,1.1.1.1")
-skip_smtp_dns = os.environ.get("COMPOSE_K3S_SKIP_SMTP_DNS", "").lower() in (
-    "1",
-    "true",
-    "yes",
-)
-nameservers: list[str] = []
-if not skip_smtp_dns:
-    nameservers = [ns.strip() for ns in extra_ns_raw.split(",") if ns.strip()]
-
-
-def is_smtp_deployment(deploy: dict) -> bool:
-    meta = deploy["metadata"]
-    name = meta["name"].lower()
-    svc = meta.get("labels", {}).get("compose.service", meta["name"]).lower()
-    if "smtp" in name or "smtp" in svc or "maildev" in name:
-        return True
-    for container in deploy["spec"]["template"]["spec"].get("containers", []):
-        image = (container.get("image") or "").lower()
-        if "maildev" in image:
-            return True
-    return False
-
-
-raw = kubectl(
-    [
-        "get",
-        "deploy",
-        "-A",
-        "-l",
-        f"compose.project={kube_project}",
-        "-o",
-        "json",
-    ]
-)
-deployments = json.loads(raw.stdout).get("items", [])
-if not deployments:
-    raise SystemExit(0)
-
-for deploy in deployments:
-    namespace = deploy["metadata"]["namespace"]
-    name = deploy["metadata"]["name"]
-    kubectl(
-        [
-            "patch",
-            "deployment",
-            name,
-            "-n",
-            namespace,
-            "--type=json",
-            "-p",
-            '[{"op": "remove", "path": "/spec/template/spec/hostAliases"}]',
-        ],
-        check=False,
-    )
-    if not is_smtp_deployment(deploy) or not nameservers:
-        continue
-    patch = {
-        "spec": {
-            "template": {
-                "spec": {
-                    "dnsConfig": {
-                        "nameservers": nameservers,
-                        "searches": [
-                            f"{namespace}.svc.cluster.local",
-                            "svc.cluster.local",
-                            "cluster.local",
-                        ],
-                        "options": [{"name": "ndots", "value": "5"}],
-                    }
-                }
-            }
-        }
-    }
-    kubectl(
-        [
-            "patch",
-            "deployment",
-            name,
-            "-n",
-            namespace,
-            "--type=merge",
-            "-p",
-            json.dumps(patch),
-        ]
-    )
-    print(f"patched smtp dns {namespace}/{name}", flush=True)
-PY
-fi
 
 log "sync completed for $kube_project"
