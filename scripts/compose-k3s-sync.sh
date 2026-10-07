@@ -26,7 +26,10 @@ Environment:
   COMPOSE_K3S_STRICT_ROLLOUT      Set to 1 to fail when kubectl rollout status fails
   COMPOSE_BAKE                    Default 0 — avoid compose bake metadata-file races on build
   BUILDX_NO_DEFAULT_ATTESTATIONS  Default 1 — skip provenance attestation (metadata-file flake)
-  TMPDIR                          Default /tmp for compose build temp files
+  COMPOSE_K3S_BUILD_TMPDIR        Temp dir for compose build metadata files
+                                  (default: PROJECT_DIR/.compose-build-tmp; overrides TMPDIR
+                                  because a shared /tmp may be invisible to the buildx plugin,
+                                  e.g. snap-confined Docker with a private /tmp)
 EOF
 }
 
@@ -331,10 +334,10 @@ compose_image_exists() {
 compose_build_service() {
   local service=$1
   local source_image=$2
-  local found
-  if "${compose[@]}" build "${build_args[@]}" "$service"; then
-    return 0
-  fi
+  local found rc=0
+  "${compose[@]}" build ${build_args[@]+"${build_args[@]}"} "$service" || rc=$?
+  ((rc == 0)) && return 0
+  log "compose build for $service exited with status $rc; checking for built image"
   if found=$(compose_image_exists "$service" "$source_image"); then
     log "compose build exited non-zero but image exists ($found); continuing (metadata-file flake)"
     return 0
@@ -346,7 +349,7 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
   log "building Compose project $project_name"
   build_args=()
   [[ "$no_cache" == true ]] && build_args+=(--no-cache)
-  export TMPDIR="${TMPDIR:-/tmp}"
+  export TMPDIR="${COMPOSE_K3S_BUILD_TMPDIR:-$project_dir/.compose-build-tmp}"
   export COMPOSE_BAKE="${COMPOSE_BAKE:-0}"
   export BUILDX_NO_DEFAULT_ATTESTATIONS="${BUILDX_NO_DEFAULT_ATTESTATIONS:-1}"
   mkdir -p "$TMPDIR"
