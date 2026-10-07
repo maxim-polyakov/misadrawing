@@ -89,8 +89,40 @@ print(
     "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
       -p "$maildev_dns_patch" >/dev/null
     log "Maildev/SMTP Deployment dnsConfig set for $namespace/$deployment"
+    fix_maildev_container_command "$namespace" "$deployment" "$source_image"
   fi
   log "schema patches applied for $namespace/$deployment"
+}
+
+fix_maildev_container_command() {
+  local namespace=$1 deployment=$2 source_image=$3
+  local inspect_img=$source_image
+  if ! docker image inspect "$inspect_img" >/dev/null 2>&1; then
+    inspect_img=maildev/maildev
+    docker image inspect "$inspect_img" >/dev/null 2>&1 || return 0
+  fi
+  local workdir
+  workdir=$(docker image inspect "$inspect_img" --format '{{.Config.WorkingDir}}')
+  [[ -n "$workdir" ]] || workdir=/home/node/app
+  # Compose→k8s often sets command: ["bin/maildev"] without WORKDIR → CrashLoopBackOff.
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
+    -p='[{"op":"remove","path":"/spec/template/spec/containers/0/command"}]' \
+    >/dev/null 2>&1 || true
+  # Patch workingDir on every container (smtp Deployments are single-container).
+  local containers
+  containers=$("${kube[@]}" get deployment "$deployment" -n "$namespace" \
+    -o jsonpath='{range .spec.template.spec.containers[*]}{.name}{"\n"}{end}')
+  while IFS= read -r cname; do
+    [[ -n "$cname" ]] || continue
+    local one
+    one=$(WD="$workdir" CN="$cname" python3 -c '
+import json, os
+print(json.dumps({"spec": {"template": {"spec": {"containers": [{"name": os.environ["CN"], "workingDir": os.environ["WD"]}]}}}}))
+')
+    "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
+      -p "$one" >/dev/null 2>&1 || true
+  done <<<"$containers"
+  log "Maildev command/workdir fix for $namespace/$deployment (workdir=$workdir)"
 }
 
 project_dir=
