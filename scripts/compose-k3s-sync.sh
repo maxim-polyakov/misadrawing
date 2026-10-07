@@ -27,7 +27,7 @@ Environment:
   COMPOSE_BAKE                    Default 0 — avoid compose bake metadata-file races on build
   BUILDX_NO_DEFAULT_ATTESTATIONS  Default 1 — skip provenance attestation (metadata-file flake)
   TMPDIR                          Default /tmp for compose build temp files
-  COMPOSE_K3S_LOCK_WAIT           Seconds to wait for per-project flock (default 600, 0 = no wait)
+  COMPOSE_K3S_LOCK_WAIT           Seconds to wait for per-project flock (0 = fail immediately)
   COMPOSE_K3S_CLEAR_ORPHAN_LOCK   Set to 1 to fuser -k stale lock holders after wait (default 1)
 EOF
 }
@@ -283,25 +283,8 @@ lock_dir=${COMPOSE_K3S_LOCK_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
 mkdir -p "$lock_dir"
 lock_file="${lock_dir}/compose-k3s-sync-${kube_project}.lock"
 exec 9>"$lock_file"
-lock_wait=${COMPOSE_K3S_LOCK_WAIT:-600}
+lock_wait=${COMPOSE_K3S_LOCK_WAIT:-0}
 clear_orphan=${COMPOSE_K3S_CLEAR_ORPHAN_LOCK:-1}
-kill_stale_lock_holders() {
-  # fuser lists every process with the lock file open, including this shell
-  # (fd 9), so filter ourselves out instead of using fuser -k.
-  local pid
-  for pid in $(fuser "$lock_file" 2>/dev/null); do
-    pid=${pid//[!0-9]/}
-    [[ -n "$pid" && "$pid" != "$$" && "$pid" != "$BASHPID" ]] || continue
-    log "killing stale lock holder pid $pid"
-    kill "$pid" 2>/dev/null || true
-  done
-  sleep 2
-  for pid in $(fuser "$lock_file" 2>/dev/null); do
-    pid=${pid//[!0-9]/}
-    [[ -n "$pid" && "$pid" != "$$" && "$pid" != "$BASHPID" ]] || continue
-    kill -9 "$pid" 2>/dev/null || true
-  done
-}
 acquire_deploy_lock() {
   if flock -n 9; then
     return 0
@@ -314,8 +297,9 @@ acquire_deploy_lock() {
   fi
   if [[ "$clear_orphan" == 1 ]] && command -v fuser >/dev/null 2>&1; then
     log "clearing stale lock holders for $kube_project"
-    kill_stale_lock_holders
-    if flock -w 10 9; then
+    fuser -k "$lock_file" 2>/dev/null || true
+    sleep 2
+    if flock -n 9; then
       return 0
     fi
   fi
@@ -333,10 +317,7 @@ with open(sys.argv[1], encoding="utf-8") as stream:
 
 project = config["name"]
 separator = sys.argv[2]
-has_builds = any("build" in service for service in config["services"].values())
 for name, service in config["services"].items():
-    if has_builds and "build" not in service:
-        continue
     if "build" not in service and not service.get("image"):
         continue
     explicit_image = "1" if service.get("image") else "0"
@@ -397,7 +378,16 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
     build_services+=("$service")
   done
   for row in "${sync_services[@]}"; do
-    IFS=$'\t' read -r service source_image _ _ <<<"$row"
+    IFS=$'\t' read -r service source_image _ explicit_image <<<"$row"
+    if [[ "$explicit_image" == 1 ]]; then
+      if docker image inspect "$source_image" >/dev/null 2>&1; then
+        log "image already present for $service ($source_image)"
+      else
+        log "pulling image for service $service ($source_image)"
+        docker pull "$source_image" || die "docker pull failed for $source_image"
+      fi
+      continue
+    fi
     log "building service $service"
     compose_build_service "$service" "$source_image" || die "compose build failed for $service"
   done
