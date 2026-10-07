@@ -26,6 +26,7 @@ Environment:
   COMPOSE_K3S_STRICT_ROLLOUT      Set to 1 to fail when kubectl rollout status fails
   COMPOSE_BAKE                    Default 0 — avoid compose bake metadata-file races on build
   TMPDIR                          Default /tmp for compose build temp files
+  BUILDX_NO_DEFAULT_ATTESTATIONS  Default 1 — skip provenance metadata files that race on build
 EOF
 }
 
@@ -317,18 +318,24 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
   [[ "$no_cache" == true ]] && build_args+=(--no-cache)
   export TMPDIR="${TMPDIR:-/tmp}"
   export COMPOSE_BAKE="${COMPOSE_BAKE:-0}"
+  export BUILDX_NO_DEFAULT_ATTESTATIONS="${BUILDX_NO_DEFAULT_ATTESTATIONS:-1}"
   mkdir -p "$TMPDIR"
+  compose_build() {
+    "${compose[@]}" build "${build_args[@]}" "$@" && return 0
+    log "compose build failed; retrying once"
+    "${compose[@]}" build "${build_args[@]}" "$@"
+  }
   build_services=()
   for row in "${sync_services[@]}"; do
     IFS=$'\t' read -r service _ _ _ <<<"$row"
     build_services+=("$service")
   done
   if ((${#build_services[@]} <= 1)); then
-    "${compose[@]}" build "${build_args[@]}"
+    compose_build
   else
     for service in "${build_services[@]}"; do
       log "building service $service"
-      "${compose[@]}" build "${build_args[@]}" "$service"
+      compose_build "$service"
     done
   fi
 fi
