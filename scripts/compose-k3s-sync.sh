@@ -24,6 +24,8 @@ Environment:
   COMPOSE_K3S_EXTRA_NAMESERVERS   Public DNS for Maildev/SMTP Deployments (default: 8.8.8.8,1.1.1.1)
   COMPOSE_K3S_SKIP_SMTP_DNS       Set to 1 to skip Maildev dnsConfig on the Deployment
   COMPOSE_K3S_STRICT_ROLLOUT      Set to 1 to fail when kubectl rollout status fails
+  COMPOSE_BAKE                    Default 0 — avoid compose bake metadata-file races on build
+  TMPDIR                          Default /tmp for compose build temp files
 EOF
 }
 
@@ -313,7 +315,22 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
   log "building Compose project $project_name"
   build_args=()
   [[ "$no_cache" == true ]] && build_args+=(--no-cache)
-  "${compose[@]}" build "${build_args[@]}"
+  export TMPDIR="${TMPDIR:-/tmp}"
+  export COMPOSE_BAKE="${COMPOSE_BAKE:-0}"
+  mkdir -p "$TMPDIR"
+  build_services=()
+  for row in "${sync_services[@]}"; do
+    IFS=$'\t' read -r service _ _ _ <<<"$row"
+    build_services+=("$service")
+  done
+  if ((${#build_services[@]} <= 1)); then
+    "${compose[@]}" build "${build_args[@]}"
+  else
+    for service in "${build_services[@]}"; do
+      log "building service $service"
+      "${compose[@]}" build "${build_args[@]}" "$service"
+    done
+  fi
 fi
 
 local_ips=" $(hostname -I 2>/dev/null || true) "
