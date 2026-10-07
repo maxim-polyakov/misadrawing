@@ -16,12 +16,14 @@ Options:
   --skip-build            Use images already built by Docker Compose
   --no-cache              Pass --no-cache to docker compose build
   --dry-run               Print the planned service/deployment mapping only
+  --patch-only            Apply hostAliases/dnsConfig patches only (no image rollout)
   --timeout DURATION      kubectl rollout timeout (default: 10m)
   -h, --help              Show this help
 
 Environment:
   COMPOSE_K3S_EXTRA_NAMESERVERS   Public DNS for Maildev/SMTP Deployments (default: 8.8.8.8,1.1.1.1)
   COMPOSE_K3S_SKIP_SMTP_DNS       Set to 1 to skip Maildev dnsConfig on the Deployment
+  COMPOSE_K3S_STRICT_ROLLOUT      Set to 1 to fail when kubectl rollout status fails
 EOF
 }
 
@@ -34,6 +36,58 @@ die() {
   exit 1
 }
 
+apply_schema_patches() {
+  local namespace=$1 deployment=$2 service=$3 source_image=$4
+
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
+    -p='[{"op":"remove","path":"/spec/template/spec/hostAliases"}]' >/dev/null 2>&1 || true
+
+  local is_maildev=false
+  if [[ "$service" == *smtp* ]] || [[ "$deployment" == *smtp* ]] || [[ "$source_image" == *maildev* ]]; then
+    is_maildev=true
+  fi
+  if [[ "$is_maildev" == true && "${COMPOSE_K3S_SKIP_SMTP_DNS:-}" != 1 ]]; then
+    local maildev_dns_patch
+    maildev_dns_patch=$(
+      COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}" \
+      NS="$namespace" python3 -c '
+import json, os
+ns = os.environ["NS"]
+servers = [
+    s.strip()
+    for s in os.environ.get("COMPOSE_K3S_EXTRA_NAMESERVERS", "8.8.8.8,1.1.1.1").split(",")
+    if s.strip()
+]
+print(
+    json.dumps(
+        {
+            "spec": {
+                "template": {
+                    "spec": {
+                        "dnsConfig": {
+                            "nameservers": servers,
+                            "searches": [
+                                f"{ns}.svc.cluster.local",
+                                "svc.cluster.local",
+                                "cluster.local",
+                            ],
+                            "options": [{"name": "ndots", "value": "5"}],
+                        }
+                    }
+                }
+            }
+        }
+    )
+)
+'
+    )
+    "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
+      -p "$maildev_dns_patch" >/dev/null
+    log "Maildev/SMTP Deployment dnsConfig set for $namespace/$deployment"
+  fi
+  log "schema patches applied for $namespace/$deployment"
+}
+
 project_dir=
 project_name_override=
 env_file=
@@ -41,6 +95,7 @@ compose_file=
 skip_build=false
 no_cache=false
 dry_run=false
+patch_only=false
 rollout_timeout=10m
 
 while (($#)); do
@@ -75,6 +130,11 @@ while (($#)); do
       ;;
     --dry-run)
       dry_run=true
+      shift
+      ;;
+    --patch-only)
+      patch_only=true
+      skip_build=true
       shift
       ;;
     --timeout)
@@ -244,7 +304,7 @@ PY
 
 ((${#sync_services[@]})) || die "Compose project has no syncable services"
 
-if [[ "$dry_run" != true ]]; then
+if [[ "$dry_run" != true && "$skip_build" != true && "$patch_only" != true ]]; then
   log "removing Compose runtime containers for $project_name"
   "${compose[@]}" down --remove-orphans
 fi
@@ -258,6 +318,8 @@ fi
 
 local_ips=" $(hostname -I 2>/dev/null || true) "
 matched_services=0
+rolled_out=0
+schema_patched=0
 
 for row in "${sync_services[@]}"; do
   IFS=$'\t' read -r service source_image replicas explicit_image <<<"$row"
@@ -291,8 +353,21 @@ for row in "${sync_services[@]}"; do
     continue
   fi
 
-  image_id=$(docker image inspect "$source_image" --format '{{.Id}}') ||
+  if [[ "$patch_only" == true ]]; then
+    apply_schema_patches "$namespace" "$deployment" "$service" "$source_image"
+    ((schema_patched += 1))
+    continue
+  fi
+
+  if ! image_id=$(docker image inspect "$source_image" --format '{{.Id}}' 2>/dev/null); then
+    if [[ "$skip_build" == true ]]; then
+      log "no local image $source_image; applying schema patches only"
+      apply_schema_patches "$namespace" "$deployment" "$service" "$source_image"
+      ((schema_patched += 1))
+      continue
+    fi
     die "Docker image not found after build: $source_image"
+  fi
   short_id=${image_id#sha256:}
   short_id=${short_id:0:16}
   immutable_image="compose-sync/${kube_project}-${service}:${short_id}"
@@ -324,51 +399,7 @@ for row in "${sync_services[@]}"; do
     -o jsonpath='{.spec.template.spec.containers[0].name}')
   [[ -n "$container" ]] || die "cannot determine container for $namespace/$deployment"
 
-  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
-    -p='[{"op":"remove","path":"/spec/template/spec/hostAliases"}]' >/dev/null 2>&1 || true
-
-  is_maildev=false
-  if [[ "$service" == *smtp* ]] || [[ "$deployment" == *smtp* ]] || [[ "$source_image" == *maildev* ]]; then
-    is_maildev=true
-  fi
-  if [[ "$dry_run" != true && "$is_maildev" == true && "${COMPOSE_K3S_SKIP_SMTP_DNS:-}" != 1 ]]; then
-    maildev_dns_patch=$(
-      COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}" \
-      NS="$namespace" python3 -c '
-import json, os
-ns = os.environ["NS"]
-servers = [
-    s.strip()
-    for s in os.environ.get("COMPOSE_K3S_EXTRA_NAMESERVERS", "8.8.8.8,1.1.1.1").split(",")
-    if s.strip()
-]
-print(
-    json.dumps(
-        {
-            "spec": {
-                "template": {
-                    "spec": {
-                        "dnsConfig": {
-                            "nameservers": servers,
-                            "searches": [
-                                f"{ns}.svc.cluster.local",
-                                "svc.cluster.local",
-                                "cluster.local",
-                            ],
-                            "options": [{"name": "ndots", "value": "5"}],
-                        }
-                    }
-                }
-            }
-        }
-    )
-)
-'
-    )
-    "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
-      -p "$maildev_dns_patch" >/dev/null
-    log "Maildev/SMTP Deployment dnsConfig set for $namespace/$deployment"
-  fi
+  apply_schema_patches "$namespace" "$deployment" "$service" "$source_image"
 
   # hostPort workloads cannot use maxSurge on a single pinned node.
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
@@ -383,11 +414,19 @@ print(
     >/dev/null
   "${kube[@]}" scale deployment "$deployment" -n "$namespace" \
     --replicas="$replicas" >/dev/null
-  "${kube[@]}" rollout status deployment/"$deployment" -n "$namespace" \
-    --timeout="$rollout_timeout"
+  if ! "${kube[@]}" rollout status deployment/"$deployment" -n "$namespace" \
+    --timeout="$rollout_timeout"; then
+    if [[ "${COMPOSE_K3S_STRICT_ROLLOUT:-}" == 1 ]]; then
+      die "rollout failed for $namespace/$deployment"
+    fi
+    log "WARNING: rollout failed for $namespace/$deployment (continuing)"
+    continue
+  fi
   log "updated $namespace/$deployment"
+  ((rolled_out += 1))
 done
 
 ((matched_services > 0)) || die "no matching Deployments found for $kube_project"
+((rolled_out + schema_patched > 0)) || die "no deployments updated for $kube_project"
 
-log "sync completed for $kube_project"
+log "sync completed for $kube_project ($rolled_out rolled out, $schema_patched schema-only)"
