@@ -83,6 +83,9 @@ jobs:
           command_timeout: 60m
           script: |
             cd "$DEPLOY_PATH"
+            export COMPOSE_BAKE=0
+            export BUILDX_NO_DEFAULT_ATTESTATIONS=1
+            export TMPDIR=/tmp
             bash "$DEPLOY_PATH/scripts/compose-k3s-sync.sh" \
               --project-dir "$DEPLOY_PATH" \
               --env-file client/.env
