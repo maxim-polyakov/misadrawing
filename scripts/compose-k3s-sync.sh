@@ -26,9 +26,7 @@ Environment:
   COMPOSE_K3S_STRICT_ROLLOUT      Set to 1 to fail when kubectl rollout status fails
   COMPOSE_BAKE                    Default 0 — avoid compose bake metadata-file races on build
   BUILDX_NO_DEFAULT_ATTESTATIONS  Default 1 — skip provenance attestation (metadata-file flake)
-  COMPOSE_K3S_BUILD_TMPDIR        Temp dir for compose build metadata files
-                                  (default: PROJECT_DIR/.compose-build-tmp; overrides TMPDIR
-                                  because a shared /tmp may be invisible to the buildx plugin)
+  TMPDIR                          Default /tmp for compose build temp files
 EOF
 }
 
@@ -314,14 +312,31 @@ if [[ "$dry_run" != true && "$skip_build" != true && "$patch_only" != true ]]; t
   "${compose[@]}" down --remove-orphans
 fi
 
+compose_image_exists() {
+  local service=$1
+  local source_image=$2
+  local candidate
+  for candidate in \
+    "$source_image" \
+    "${project_name}${image_separator}${service}" \
+    "${project_name}-${service}"; do
+    if docker image inspect "$candidate" >/dev/null 2>&1; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
 compose_build_service() {
   local service=$1
   local source_image=$2
+  local found
   if "${compose[@]}" build "${build_args[@]}" "$service"; then
     return 0
   fi
-  if docker image inspect "$source_image" >/dev/null 2>&1; then
-    log "compose build exited non-zero but image exists ($source_image); continuing (metadata-file flake)"
+  if found=$(compose_image_exists "$service" "$source_image"); then
+    log "compose build exited non-zero but image exists ($found); continuing (metadata-file flake)"
     return 0
   fi
   return 1
@@ -331,7 +346,7 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
   log "building Compose project $project_name"
   build_args=()
   [[ "$no_cache" == true ]] && build_args+=(--no-cache)
-  export TMPDIR="${COMPOSE_K3S_BUILD_TMPDIR:-$project_dir/.compose-build-tmp}"
+  export TMPDIR="${TMPDIR:-/tmp}"
   export COMPOSE_BAKE="${COMPOSE_BAKE:-0}"
   export BUILDX_NO_DEFAULT_ATTESTATIONS="${BUILDX_NO_DEFAULT_ATTESTATIONS:-1}"
   mkdir -p "$TMPDIR"
@@ -340,16 +355,11 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
     IFS=$'\t' read -r service _ _ _ <<<"$row"
     build_services+=("$service")
   done
-  if ((${#build_services[@]} <= 1)); then
-    IFS=$'\t' read -r service source_image _ _ <<<"${sync_services[0]}"
+  for row in "${sync_services[@]}"; do
+    IFS=$'\t' read -r service source_image _ _ <<<"$row"
+    log "building service $service"
     compose_build_service "$service" "$source_image" || die "compose build failed for $service"
-  else
-    for row in "${sync_services[@]}"; do
-      IFS=$'\t' read -r service source_image _ _ <<<"$row"
-      log "building service $service"
-      compose_build_service "$service" "$source_image" || die "compose build failed for $service"
-    done
-  fi
+  done
 fi
 
 local_ips=" $(hostname -I 2>/dev/null || true) "
