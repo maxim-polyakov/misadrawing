@@ -190,7 +190,9 @@ PY
 )
 [[ -n "$kube_project" ]] || die "cannot normalize Compose project name: $project_name"
 
-exec 9>"/var/lock/compose-k3s-sync-${kube_project}.lock"
+lock_dir=${COMPOSE_K3S_LOCK_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
+mkdir -p "$lock_dir"
+exec 9>"${lock_dir}/compose-k3s-sync-${kube_project}.lock"
 flock -n 9 || die "another deployment of $kube_project is already running"
 
 mapfile -t sync_services < <(
