@@ -94,23 +94,6 @@ print(
   log "schema patches applied for $namespace/$deployment"
 }
 
-dump_rollout_diagnostics() {
-  local namespace=$1 deployment=$2 selector pod
-  log "rollout diagnostics for $namespace/$deployment"
-  selector=$("${kube[@]}" get deployment "$deployment" -n "$namespace" -o json 2>/dev/null |
-    python3 -c 'import json, sys; print(",".join(f"{k}={v}" for k, v in json.load(sys.stdin)["spec"]["selector"].get("matchLabels", {}).items()))' \
-    2>/dev/null || true)
-  [[ -n "$selector" ]] || return 0
-  "${kube[@]}" get pods -n "$namespace" -l "$selector" -o wide 2>&1 || true
-  while read -r pod; do
-    [[ -n "$pod" ]] || continue
-    "${kube[@]}" describe pod "$pod" -n "$namespace" 2>&1 | tail -n 40 || true
-    "${kube[@]}" logs "$pod" -n "$namespace" --all-containers --tail=50 2>&1 || true
-    "${kube[@]}" logs "$pod" -n "$namespace" --all-containers --previous --tail=50 2>/dev/null || true
-  done < <("${kube[@]}" get pods -n "$namespace" -l "$selector" \
-    -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null || true)
-}
-
 fix_maildev_container_command() {
   local namespace=$1 deployment=$2 source_image=$3
   local inspect_img=$source_image
@@ -132,7 +115,7 @@ deploy = json.load(sys.stdin)
 wd = os.environ["WD"]
 out = []
 for c in deploy["spec"]["template"]["spec"]["containers"]:
-    entry = {"name": c["name"], "workingDir": wd}
+    entry = {"name": c["name"], "image": c["image"], "workingDir": wd}
     args = c.get("args") or []
     if len(args) >= 2 and args[0] == "-c" and "maildev" in str(args[1]):
         entry["command"] = ["/bin/sh", "-c"]
@@ -545,7 +528,6 @@ for row in "${sync_services[@]}"; do
     --replicas="$replicas" >/dev/null
   if ! "${kube[@]}" rollout status deployment/"$deployment" -n "$namespace" \
     --timeout="$rollout_timeout"; then
-    dump_rollout_diagnostics "$namespace" "$deployment"
     if [[ "${COMPOSE_K3S_STRICT_ROLLOUT:-}" == 1 ]]; then
       die "rollout failed for $namespace/$deployment"
     fi
