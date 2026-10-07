@@ -327,7 +327,11 @@ for row in "${sync_services[@]}"; do
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
     -p='[{"op":"remove","path":"/spec/template/spec/hostAliases"}]' >/dev/null 2>&1 || true
 
-  if [[ "$dry_run" != true && "$service" == *smtp* && "${COMPOSE_K3S_SKIP_SMTP_DNS:-}" != 1 ]]; then
+  is_maildev=false
+  if [[ "$service" == *smtp* ]] || [[ "$deployment" == *smtp* ]] || [[ "$source_image" == *maildev* ]]; then
+    is_maildev=true
+  fi
+  if [[ "$dry_run" != true && "$is_maildev" == true && "${COMPOSE_K3S_SKIP_SMTP_DNS:-}" != 1 ]]; then
     maildev_dns_patch=$(
       COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}" \
       NS="$namespace" python3 -c '
