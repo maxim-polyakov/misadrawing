@@ -26,7 +26,9 @@ Environment:
   COMPOSE_K3S_STRICT_ROLLOUT      Set to 1 to fail when kubectl rollout status fails
   COMPOSE_BAKE                    Default 0 — avoid compose bake metadata-file races on build
   BUILDX_NO_DEFAULT_ATTESTATIONS  Default 1 — skip provenance attestation (metadata-file flake)
-  TMPDIR                          Default /tmp for compose build temp files
+  COMPOSE_K3S_BUILD_TMPDIR        Temp dir for compose build metadata files
+                                  (default: PROJECT_DIR/.compose-build-tmp; overrides TMPDIR
+                                  because a shared /tmp may be invisible to the buildx plugin)
 EOF
 }
 
@@ -329,7 +331,7 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
   log "building Compose project $project_name"
   build_args=()
   [[ "$no_cache" == true ]] && build_args+=(--no-cache)
-  export TMPDIR="${TMPDIR:-/tmp}"
+  export TMPDIR="${COMPOSE_K3S_BUILD_TMPDIR:-$project_dir/.compose-build-tmp}"
   export COMPOSE_BAKE="${COMPOSE_BAKE:-0}"
   export BUILDX_NO_DEFAULT_ATTESTATIONS="${BUILDX_NO_DEFAULT_ATTESTATIONS:-1}"
   mkdir -p "$TMPDIR"
