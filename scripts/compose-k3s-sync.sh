@@ -26,10 +26,9 @@ Environment:
   COMPOSE_K3S_STRICT_ROLLOUT      Set to 1 to fail when kubectl rollout status fails
   COMPOSE_BAKE                    Default 0 — avoid compose bake metadata-file races on build
   BUILDX_NO_DEFAULT_ATTESTATIONS  Default 1 — skip provenance attestation (metadata-file flake)
-  COMPOSE_K3S_BUILD_TMPDIR        Temp dir for compose build metadata files
-                                  (default: PROJECT_DIR/.compose-build-tmp; overrides TMPDIR
-                                  because a shared /tmp may be invisible to the buildx plugin,
-                                  e.g. snap-confined Docker with a private /tmp)
+  TMPDIR                          Default /tmp for compose build temp files
+  COMPOSE_K3S_LOCK_WAIT           Seconds to wait for per-project flock (0 = fail immediately)
+  COMPOSE_K3S_CLEAR_ORPHAN_LOCK   Set to 1 to fuser -k stale lock holders after wait (default 1)
 EOF
 }
 
@@ -282,8 +281,31 @@ PY
 
 lock_dir=${COMPOSE_K3S_LOCK_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
 mkdir -p "$lock_dir"
-exec 9>"${lock_dir}/compose-k3s-sync-${kube_project}.lock"
-flock -n 9 || die "another deployment of $kube_project is already running"
+lock_file="${lock_dir}/compose-k3s-sync-${kube_project}.lock"
+exec 9>"$lock_file"
+lock_wait=${COMPOSE_K3S_LOCK_WAIT:-0}
+clear_orphan=${COMPOSE_K3S_CLEAR_ORPHAN_LOCK:-1}
+acquire_deploy_lock() {
+  if flock -n 9; then
+    return 0
+  fi
+  if [[ "$lock_wait" =~ ^[0-9]+$ && "$lock_wait" -gt 0 ]]; then
+    log "deploy lock busy for $kube_project; waiting up to ${lock_wait}s"
+    if flock -w "$lock_wait" 9; then
+      return 0
+    fi
+  fi
+  if [[ "$clear_orphan" == 1 ]] && command -v fuser >/dev/null 2>&1; then
+    log "clearing stale lock holders for $kube_project"
+    fuser -k "$lock_file" 2>/dev/null || true
+    sleep 2
+    if flock -n 9; then
+      return 0
+    fi
+  fi
+  return 1
+}
+acquire_deploy_lock || die "another deployment of $kube_project is already running (or lock wait expired)"
 
 mapfile -t sync_services < <(
   python3 - "$config_json" "$image_separator" <<'PY'
@@ -334,10 +356,10 @@ compose_image_exists() {
 compose_build_service() {
   local service=$1
   local source_image=$2
-  local found rc=0
-  "${compose[@]}" build ${build_args[@]+"${build_args[@]}"} "$service" || rc=$?
-  ((rc == 0)) && return 0
-  log "compose build for $service exited with status $rc; checking for built image"
+  local found
+  if "${compose[@]}" build "${build_args[@]}" "$service"; then
+    return 0
+  fi
   if found=$(compose_image_exists "$service" "$source_image"); then
     log "compose build exited non-zero but image exists ($found); continuing (metadata-file flake)"
     return 0
@@ -349,7 +371,7 @@ if [[ "$skip_build" != true && "$dry_run" != true ]]; then
   log "building Compose project $project_name"
   build_args=()
   [[ "$no_cache" == true ]] && build_args+=(--no-cache)
-  export TMPDIR="${COMPOSE_K3S_BUILD_TMPDIR:-$project_dir/.compose-build-tmp}"
+  export TMPDIR="${TMPDIR:-/tmp}"
   export COMPOSE_BAKE="${COMPOSE_BAKE:-0}"
   export BUILDX_NO_DEFAULT_ATTESTATIONS="${BUILDX_NO_DEFAULT_ATTESTATIONS:-1}"
   mkdir -p "$TMPDIR"
