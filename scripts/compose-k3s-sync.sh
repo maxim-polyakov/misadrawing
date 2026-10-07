@@ -18,6 +18,10 @@ Options:
   --dry-run               Print the planned service/deployment mapping only
   --timeout DURATION      kubectl rollout timeout (default: 10m)
   -h, --help              Show this help
+
+Environment:
+  COMPOSE_K3S_EXTRA_NAMESERVERS   Fallback resolvers for pods (default: 8.8.8.8,1.1.1.1)
+  COMPOSE_K3S_SKIP_POD_DNS        Set to 1 to skip pod DNS patch (hostAliases only)
 EOF
 }
 
@@ -341,9 +345,14 @@ done
 ((matched_services > 0)) || die "no matching Deployments found for $kube_project"
 
 if [[ "$dry_run" != true ]]; then
-  log "refreshing Compose-style hostAliases for $kube_project"
+  # Docker Compose used the host resolver; k3s pods default to CoreDNS, which can
+  # fail on pinned workers. hostAliases keep compose service names working; extra
+  # nameservers restore public DNS (Maildev relay, brokers, external APIs).
+  export COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}"
+  log "refreshing Compose-style hostAliases and pod DNS for $kube_project"
   python3 - "$kube_project" "${kube[@]}" <<'PY'
 import json
+import os
 import subprocess
 import sys
 
@@ -353,6 +362,16 @@ kube = sys.argv[2:]
 def kubectl(*args):
     return subprocess.check_output([*kube, *args], text=True)
 
+
+extra_ns_raw = os.environ.get("COMPOSE_K3S_EXTRA_NAMESERVERS", "8.8.8.8,1.1.1.1")
+skip_pod_dns = os.environ.get("COMPOSE_K3S_SKIP_POD_DNS", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+nameservers: list[str] = []
+if not skip_pod_dns:
+    nameservers = [ns.strip() for ns in extra_ns_raw.split(",") if ns.strip()]
 
 services = json.loads(
     kubectl(
@@ -378,9 +397,6 @@ for item in services:
         if host not in aliases_by_ip[cluster_ip]:
             aliases_by_ip[cluster_ip].append(host)
 
-if not aliases_by_ip:
-    raise SystemExit(0)
-
 deployments = json.loads(
     kubectl(
         "get",
@@ -393,16 +409,38 @@ deployments = json.loads(
     )
 ).get("items", [])
 
+if not deployments:
+    raise SystemExit(0)
+
 for deploy in deployments:
     namespace = deploy["metadata"]["namespace"]
     name = deploy["metadata"]["name"]
     own_service = deploy["metadata"]["labels"].get("compose.service", name)
     host_aliases = []
     for ip, hostnames in sorted(aliases_by_ip.items()):
-        filtered = [h for h in hostnames if not h.startswith(f"{own_service}.") and h != own_service]
+        filtered = [
+            h
+            for h in hostnames
+            if not h.startswith(f"{own_service}.") and h != own_service
+        ]
         if filtered:
             host_aliases.append({"ip": ip, "hostnames": filtered})
-    patch = {"spec": {"template": {"spec": {"hostAliases": host_aliases}}}}
+    pod_spec: dict = {}
+    if host_aliases:
+        pod_spec["hostAliases"] = host_aliases
+    if nameservers:
+        pod_spec["dnsConfig"] = {
+            "nameservers": nameservers,
+            "searches": [
+                f"{namespace}.svc.cluster.local",
+                "svc.cluster.local",
+                "cluster.local",
+            ],
+            "options": [{"name": "ndots", "value": "5"}],
+        }
+    if not pod_spec:
+        continue
+    patch = {"spec": {"template": {"spec": pod_spec}}}
     subprocess.check_call(
         [
             *kube,
