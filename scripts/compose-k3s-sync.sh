@@ -290,10 +290,6 @@ for row in "${sync_services[@]}"; do
     deployment_image=$registry_digest
     pull_policy=IfNotPresent
     log "using registry digest $deployment_image for multi-platform image"
-  elif k3s_images=$(k3s ctr -n k8s.io images ls -q 2>/dev/null) &&
-      grep -Fxq -e "$immutable_image" -e "docker.io/$immutable_image" <<<"$k3s_images"; then
-    # The tag is derived from the image ID, so an existing entry is identical.
-    log "$immutable_image already present in k3s, skipping import"
   else
     log "importing $source_image as $immutable_image"
     docker image tag "$source_image" "$immutable_image"
