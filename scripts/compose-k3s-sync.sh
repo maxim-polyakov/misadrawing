@@ -123,6 +123,15 @@ fi
 if [[ -n "$kubeconfig" && -r "$kubeconfig" ]]; then
   kube+=(--kubeconfig "$kubeconfig")
 fi
+k3s_bin=$(command -v k3s)
+k3s_ctr=("$k3s_bin" ctr)
+if ! "$k3s_bin" ctr -n k8s.io images ls >/dev/null 2>&1; then
+  if sudo -n "$k3s_bin" ctr -n k8s.io images ls >/dev/null 2>&1; then
+    k3s_ctr=(sudo -n "$k3s_bin" ctr)
+  else
+    die "cannot access k3s containerd; allow: sudo -n $k3s_bin ctr ..."
+  fi
+fi
 if [[ -n "$compose_file" ]]; then
   [[ -f "$project_dir/$compose_file" ]] || die "compose file not found: $compose_file"
   compose+=(-f "$compose_file")
@@ -304,7 +313,7 @@ for row in "${sync_services[@]}"; do
   else
     log "importing $source_image as $immutable_image"
     docker image tag "$source_image" "$immutable_image"
-    docker image save "$immutable_image" | k3s ctr -n k8s.io images import -
+    docker image save "$immutable_image" | "${k3s_ctr[@]}" -n k8s.io images import -
   fi
 
   container=$("${kube[@]}" get deployment "$deployment" -n "$namespace" \
