@@ -20,8 +20,8 @@ Options:
   -h, --help              Show this help
 
 Environment:
-  COMPOSE_K3S_EXTRA_NAMESERVERS   Fallback resolvers for pods (default: 8.8.8.8,1.1.1.1)
-  COMPOSE_K3S_SKIP_POD_DNS        Set to 1 to skip pod DNS patch (hostAliases only)
+  COMPOSE_K3S_EXTRA_NAMESERVERS   Public resolvers for Maildev/SMTP pods (default: 8.8.8.8,1.1.1.1)
+  COMPOSE_K3S_SKIP_SMTP_DNS       Set to 1 to skip SMTP/Maildev external DNS patch
 EOF
 }
 
@@ -345,11 +345,10 @@ done
 ((matched_services > 0)) || die "no matching Deployments found for $kube_project"
 
 if [[ "$dry_run" != true ]]; then
-  # Docker Compose used the host resolver; k3s pods default to CoreDNS, which can
-  # fail on pinned workers. hostAliases keep compose service names working; extra
-  # nameservers restore public DNS (Maildev relay, brokers, external APIs).
+  # Internal traffic uses ClusterIP + CoreDNS. Maildev auto-relay needs public DNS when
+  # cluster DNS to the internet is flaky on pinned workers.
   export COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}"
-  log "refreshing Compose-style hostAliases and pod DNS for $kube_project"
+  log "SMTP/Maildev external DNS patch for $kube_project (no hostAliases)"
   python3 - "$kube_project" "${kube[@]}" <<'PY'
 import json
 import os
@@ -359,46 +358,41 @@ import sys
 kube_project = sys.argv[1]
 kube = sys.argv[2:]
 
-def kubectl(*args):
-    return subprocess.check_output([*kube, *args], text=True)
+def kubectl(*args, check=True):
+    return subprocess.run(
+        [*kube, *args],
+        check=check,
+        capture_output=True,
+        text=True,
+    )
 
 
 extra_ns_raw = os.environ.get("COMPOSE_K3S_EXTRA_NAMESERVERS", "8.8.8.8,1.1.1.1")
-skip_pod_dns = os.environ.get("COMPOSE_K3S_SKIP_POD_DNS", "").lower() in (
+skip_smtp_dns = os.environ.get("COMPOSE_K3S_SKIP_SMTP_DNS", "").lower() in (
     "1",
     "true",
     "yes",
 )
 nameservers: list[str] = []
-if not skip_pod_dns:
+if not skip_smtp_dns:
     nameservers = [ns.strip() for ns in extra_ns_raw.split(",") if ns.strip()]
 
-services = json.loads(
-    kubectl(
-        "get",
-        "svc",
-        "-A",
-        "-l",
-        f"compose.project={kube_project}",
-        "-o",
-        "json",
-    )
-).get("items", [])
-aliases_by_ip: dict[str, list[str]] = {}
-for item in services:
-    name = item["metadata"]["name"]
-    namespace = item["metadata"]["namespace"]
-    cluster_ip = item["spec"].get("clusterIP")
-    if not cluster_ip or cluster_ip == "None":
-        continue
-    hostnames = [name, f"{name}.{namespace}"]
-    aliases_by_ip.setdefault(cluster_ip, [])
-    for host in hostnames:
-        if host not in aliases_by_ip[cluster_ip]:
-            aliases_by_ip[cluster_ip].append(host)
 
-deployments = json.loads(
-    kubectl(
+def is_smtp_deployment(deploy: dict) -> bool:
+    meta = deploy["metadata"]
+    name = meta["name"].lower()
+    svc = meta.get("labels", {}).get("compose.service", meta["name"]).lower()
+    if "smtp" in name or "smtp" in svc or "maildev" in name:
+        return True
+    for container in deploy["spec"]["template"]["spec"].get("containers", []):
+        image = (container.get("image") or "").lower()
+        if "maildev" in image:
+            return True
+    return False
+
+
+raw = kubectl(
+    [
         "get",
         "deploy",
         "-A",
@@ -406,44 +400,49 @@ deployments = json.loads(
         f"compose.project={kube_project}",
         "-o",
         "json",
-    )
-).get("items", [])
-
+    ]
+)
+deployments = json.loads(raw.stdout).get("items", [])
 if not deployments:
     raise SystemExit(0)
 
 for deploy in deployments:
     namespace = deploy["metadata"]["namespace"]
     name = deploy["metadata"]["name"]
-    own_service = deploy["metadata"]["labels"].get("compose.service", name)
-    host_aliases = []
-    for ip, hostnames in sorted(aliases_by_ip.items()):
-        filtered = [
-            h
-            for h in hostnames
-            if not h.startswith(f"{own_service}.") and h != own_service
-        ]
-        if filtered:
-            host_aliases.append({"ip": ip, "hostnames": filtered})
-    pod_spec: dict = {}
-    if host_aliases:
-        pod_spec["hostAliases"] = host_aliases
-    if nameservers:
-        pod_spec["dnsConfig"] = {
-            "nameservers": nameservers,
-            "searches": [
-                f"{namespace}.svc.cluster.local",
-                "svc.cluster.local",
-                "cluster.local",
-            ],
-            "options": [{"name": "ndots", "value": "5"}],
-        }
-    if not pod_spec:
-        continue
-    patch = {"spec": {"template": {"spec": pod_spec}}}
-    subprocess.check_call(
+    kubectl(
         [
-            *kube,
+            "patch",
+            "deployment",
+            name,
+            "-n",
+            namespace,
+            "--type=json",
+            "-p",
+            '[{"op": "remove", "path": "/spec/template/spec/hostAliases"}]',
+        ],
+        check=False,
+    )
+    if not is_smtp_deployment(deploy) or not nameservers:
+        continue
+    patch = {
+        "spec": {
+            "template": {
+                "spec": {
+                    "dnsConfig": {
+                        "nameservers": nameservers,
+                        "searches": [
+                            f"{namespace}.svc.cluster.local",
+                            "svc.cluster.local",
+                            "cluster.local",
+                        ],
+                        "options": [{"name": "ndots", "value": "5"}],
+                    }
+                }
+            }
+        }
+    }
+    kubectl(
+        [
             "patch",
             "deployment",
             name,
@@ -454,6 +453,7 @@ for deploy in deployments:
             json.dumps(patch),
         ]
     )
+    print(f"patched smtp dns {namespace}/{name}", flush=True)
 PY
 fi
 
