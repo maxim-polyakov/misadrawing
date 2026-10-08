@@ -41,6 +41,56 @@ die() {
   exit 1
 }
 
+sync_compose_service_environment() {
+  local namespace=$1 deployment=$2 service=$3
+  local env_patch status
+  env_patch=$(mktemp)
+  chmod 600 "$env_patch"
+
+  if ! python3 - "$config_json" "$service" "$env_patch" <<'PY'
+import json
+import sys
+
+config_path, service_name, patch_path = sys.argv[1:]
+with open(config_path, encoding="utf-8") as stream:
+    service = json.load(stream)["services"][service_name]
+
+environment = service.get("environment") or {}
+if isinstance(environment, list):
+    parsed = {}
+    for item in environment:
+        name, separator, value = str(item).partition("=")
+        parsed[name] = value if separator else ""
+    environment = parsed
+
+env = [
+    {"name": str(name), "value": "" if value is None else str(value)}
+    for name, value in sorted(environment.items())
+]
+patch = [{
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/env",
+    "value": env,
+}]
+with open(patch_path, "w", encoding="utf-8") as stream:
+    json.dump(patch, stream)
+PY
+  then
+    rm -f "$env_patch"
+    die "cannot prepare Compose environment for $service"
+  fi
+
+  if "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
+    --patch-file "$env_patch" >/dev/null; then
+    status=0
+  else
+    status=$?
+  fi
+  rm -f "$env_patch"
+  ((status == 0)) || return "$status"
+  log "Compose environment synchronized for $namespace/$deployment"
+}
+
 apply_schema_patches() {
   local namespace=$1 deployment=$2 service=$3 source_image=$4
 
@@ -52,6 +102,7 @@ apply_schema_patches() {
     is_maildev=true
   fi
   if [[ "$is_maildev" == true && "${COMPOSE_K3S_SKIP_SMTP_DNS:-}" != 1 ]]; then
+    sync_compose_service_environment "$namespace" "$deployment" "$service"
     local maildev_dns_patch
     maildev_dns_patch=$(
       COMPOSE_K3S_EXTRA_NAMESERVERS="${COMPOSE_K3S_EXTRA_NAMESERVERS:-8.8.8.8,1.1.1.1}" \
@@ -89,13 +140,13 @@ print(
     "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
       -p "$maildev_dns_patch" >/dev/null
     log "Maildev/SMTP Deployment dnsConfig set for $namespace/$deployment"
-    fix_maildev_container_command "$namespace" "$deployment" "$source_image"
+    fix_maildev_container_command "$namespace" "$deployment" "$source_image" "$service"
   fi
   log "schema patches applied for $namespace/$deployment"
 }
 
 fix_maildev_container_command() {
-  local namespace=$1 deployment=$2 source_image=$3
+  local namespace=$1 deployment=$2 source_image=$3 service=$4
   local inspect_img=$source_image
   if ! docker image inspect "$inspect_img" >/dev/null 2>&1; then
     inspect_img=maildev/maildev
@@ -109,32 +160,50 @@ fix_maildev_container_command() {
     -p='[{"op":"remove","path":"/spec/template/spec/containers/0/command"}]' \
     >/dev/null 2>&1 || true
   local merge_patch
-  merge_patch=$("${kube[@]}" get deployment "$deployment" -n "$namespace" -o json | WD="$workdir" python3 -c '
+  merge_patch=$("${kube[@]}" get deployment "$deployment" -n "$namespace" -o json |
+    WD="$workdir" python3 -c '
 import json, os, re, shlex, sys
 deploy = json.load(sys.stdin)
 wd = os.environ["WD"]
+with open(sys.argv[1], encoding="utf-8") as stream:
+    service = json.load(stream)["services"][sys.argv[2]]
+env_map = service.get("environment") or {}
+if isinstance(env_map, list):
+    env_map = dict(
+        str(item).partition("=")[::2] if "=" in str(item) else (str(item), "")
+        for item in env_map
+    )
+compose_command = service.get("command") or []
+script = None
+desired_args = None
+if isinstance(compose_command, str):
+    script = compose_command
+elif (
+    isinstance(compose_command, list)
+    and len(compose_command) >= 2
+    and compose_command[0] == "-c"
+    and "maildev" in str(compose_command[1])
+):
+    script = str(compose_command[1])
+elif isinstance(compose_command, list) and compose_command:
+    desired_args = [str(value) for value in compose_command]
+if script:
+    match = re.search(r"maildev\.js\s+(.*)", script, re.S)
+    if match:
+        flags = re.sub(
+            r"\$\{(\w+)\}",
+            lambda found: str(env_map.get(found.group(1), "") or ""),
+            match.group(1),
+        )
+        desired_args = shlex.split(flags)
 out = []
 for c in deploy["spec"]["template"]["spec"]["containers"]:
     entry = {"name": c["name"], "image": c["image"], "workingDir": wd}
-    cmd = c.get("command") or []
-    args = c.get("args") or []
-    script = None
-    if len(args) >= 2 and args[0] == "-c" and "maildev" in str(args[1]):
-        script = args[1]
-    elif cmd == ["/bin/sh", "-c"] and args and "maildev" in str(args[0]):
-        script = args[0]
-    if script:
-        env_map = {e["name"]: e.get("value", "") for e in c.get("env") or []}
-        m = re.search(r"maildev\\.js\\s+(.*)", script, re.S)
-        if m and env_map:
-            flags = re.sub(r"\\$\\{(\\w+)\\}", lambda mo: env_map.get(mo.group(1), ""), m.group(1))
-            entry["args"] = shlex.split(flags)
-        else:
-            entry["command"] = ["/bin/sh", "-c"]
-            entry["args"] = [script]
+    if desired_args is not None:
+        entry["args"] = desired_args
     out.append(entry)
 print(json.dumps({"spec": {"template": {"spec": {"containers": out}}}}))
-')
+' "$config_json" "$service")
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
     -p "$merge_patch" >/dev/null 2>&1 || true
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
