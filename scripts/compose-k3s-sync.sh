@@ -148,12 +148,13 @@ print(
 fix_maildev_container_command() {
   local namespace=$1 deployment=$2 source_image=$3 service=$4
   local inspect_img=$source_image
+  local workdir=/home/node/app
   if ! docker image inspect "$inspect_img" >/dev/null 2>&1; then
     inspect_img=maildev/maildev
-    docker image inspect "$inspect_img" >/dev/null 2>&1 || return 0
   fi
-  local workdir
-  workdir=$(docker image inspect "$inspect_img" --format '{{.Config.WorkingDir}}')
+  if docker image inspect "$inspect_img" >/dev/null 2>&1; then
+    workdir=$(docker image inspect "$inspect_img" --format '{{.Config.WorkingDir}}')
+  fi
   [[ -n "$workdir" ]] || workdir=/home/node/app
   # Compose→k8s: command ["bin/maildev"] without WORKDIR, or args ["-c","exec node …"] vs entrypoint node.
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
@@ -191,7 +192,7 @@ if script:
     match = re.search(r"maildev\.js\s+(.*)", script, re.S)
     if match:
         flags = re.sub(
-            r"\$\{(\w+)\}",
+            r"\$\$?\{(\w+)\}",
             lambda found: str(env_map.get(found.group(1), "") or ""),
             match.group(1),
         )
