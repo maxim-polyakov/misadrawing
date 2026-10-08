@@ -205,7 +205,7 @@ for c in deploy["spec"]["template"]["spec"]["containers"]:
     out.append(entry)
 print(json.dumps({"spec": {"template": {"spec": {"containers": out}}}}))
 ' "$config_json" "$service")
-  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type strategic \
     -p "$merge_patch" >/dev/null 2>&1 || true
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
     -p='[{"op":"remove","path":"/spec/template/spec/containers/0/command"}]' \
