@@ -65,7 +65,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: "client,server,docker-compose.yml"
+          source: "client,server,scripts,docker-compose.yml"
           target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
 
@@ -82,5 +82,14 @@ jobs:
           script_stop: true
           command_timeout: 60m
           script: |
-            sudo -n /usr/local/sbin/compose-k3s-sync \
-              --project-dir "$DEPLOY_PATH"
+            set -euo pipefail
+            echo "[deploy] $(date -Is) connected on $(hostname)"
+            cd "$DEPLOY_PATH"
+            export COMPOSE_BAKE=0
+            export BUILDX_NO_DEFAULT_ATTESTATIONS=1
+            export TMPDIR=/tmp
+            export COMPOSE_K3S_LOCK_WAIT="${COMPOSE_K3S_LOCK_WAIT:-300}"
+            export COMPOSE_K3S_CLEAR_ORPHAN_LOCK=1
+            stdbuf -oL -eL bash "$DEPLOY_PATH/scripts/compose-k3s-sync.sh" \
+              --project-dir "$DEPLOY_PATH" \
+              --env-file client/.env

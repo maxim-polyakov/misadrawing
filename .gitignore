@@ -1,3 +1,4 @@
 /.idea
 server/.env
 client/.env
+.compose-build-tmp/
