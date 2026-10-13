@@ -616,6 +616,27 @@ for row in "${sync_services[@]}"; do
     -p '{"spec":{"template":{"metadata":{"labels":{"baxic.ru/workload-pool":"main"}},"spec":{"imagePullSecrets":[{"name":"ghcr-pull"}],"topologySpreadConstraints":[{"maxSkew":1,"topologyKey":"kubernetes.io/hostname","whenUnsatisfiable":"ScheduleAnyway","labelSelector":{"matchLabels":{"baxic.ru/workload-pool":"main"}}}]}}}}' \
     >/dev/null
 
+  hostport_patch=$(
+    "${kube[@]}" get deployment "$deployment" -n "$namespace" -o json |
+      python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+patch = []
+for ci, container in enumerate(d["spec"]["template"]["spec"].get("containers", [])):
+    for pi, port in reversed(list(enumerate(container.get("ports") or []))):
+        if "hostPort" in port:
+            patch.append({
+                "op": "remove",
+                "path": f"/spec/template/spec/containers/{ci}/ports/{pi}/hostPort",
+            })
+print(json.dumps(patch, separators=(",", ":")))
+'
+  )
+  if [[ "$hostport_patch" != "[]" ]]; then
+    "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
+      -p "$hostport_patch" >/dev/null
+  fi
+
   # hostPort workloads cannot use maxSurge on a single pinned node.
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
     -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}' >/dev/null
