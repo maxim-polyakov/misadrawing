@@ -291,6 +291,7 @@ while (($#)); do
   esac
 done
 
+registry_prefix=${registry_prefix,,}
 if [[ -n "$registry_prefix" || -n "$registry_tag" ]]; then
   [[ -n "$registry_prefix" && -n "$registry_tag" ]] ||
     die "--registry-prefix and --registry-tag must be used together"
