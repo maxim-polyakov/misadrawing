@@ -5,8 +5,8 @@ usage() {
   cat <<'EOF'
 Usage: compose-k3s-sync --project-dir DIR [options]
 
-Build Docker Compose services, import immutable copies of locally built images
-into the k3s containerd on this node, and roll out matching Deployments.
+Build Docker Compose services, publish immutable images to a registry (or import
+them into local k3s containerd), and roll out matching Deployments.
 
 Options:
   --project-dir DIR       Directory containing docker-compose.yml (required)
@@ -17,6 +17,8 @@ Options:
   --no-cache              Pass --no-cache to docker compose build
   --dry-run               Print the planned service/deployment mapping only
   --patch-only            Apply hostAliases/dnsConfig patches only (no image rollout)
+  --registry-prefix PATH  Registry path, for example ghcr.io/owner/repository
+  --registry-tag TAG      Immutable tag to publish (normally the Git commit SHA)
   --timeout DURATION      kubectl rollout timeout (default: 10m)
   -h, --help              Show this help
 
@@ -221,6 +223,8 @@ skip_build=false
 no_cache=false
 dry_run=false
 patch_only=false
+registry_prefix=${COMPOSE_K3S_REGISTRY_PREFIX:-}
+registry_tag=${COMPOSE_K3S_REGISTRY_TAG:-}
 rollout_timeout=10m
 
 while (($#)); do
@@ -262,6 +266,16 @@ while (($#)); do
       skip_build=true
       shift
       ;;
+    --registry-prefix)
+      (($# >= 2)) || die "--registry-prefix requires a value"
+      registry_prefix=${2,,}
+      shift 2
+      ;;
+    --registry-tag)
+      (($# >= 2)) || die "--registry-tag requires a value"
+      registry_tag=$2
+      shift 2
+      ;;
     --timeout)
       (($# >= 2)) || die "--timeout requires a value"
       rollout_timeout=$2
@@ -276,6 +290,11 @@ while (($#)); do
       ;;
   esac
 done
+
+if [[ -n "$registry_prefix" || -n "$registry_tag" ]]; then
+  [[ -n "$registry_prefix" && -n "$registry_tag" ]] ||
+    die "--registry-prefix and --registry-tag must be used together"
+fi
 
 [[ -n "$project_dir" ]] || die "--project-dir is required"
 project_dir=$(cd "$project_dir" && pwd)
@@ -535,18 +554,9 @@ for row in "${sync_services[@]}"; do
   ((matched_services += 1))
 
   IFS=$'\t' read -r namespace deployment <<<"${matches[0]}"
-  target_node=$("${kube[@]}" get deployment "$deployment" -n "$namespace" \
-    -o jsonpath='{.spec.template.spec.nodeSelector.kubernetes\.io/hostname}')
-  [[ -n "$target_node" ]] || die "$namespace/$deployment is not pinned to a node"
-
-  target_ip=$("${kube[@]}" get node "$target_node" \
-    -o jsonpath='{range .status.addresses[?(@.type=="InternalIP")]}{.address}{end}')
-  [[ -n "$target_ip" ]] || die "cannot determine InternalIP of node $target_node"
-  [[ "$local_ips" == *" $target_ip "* ]] || die \
-    "$namespace/$deployment targets $target_node ($target_ip), not this node"
 
   if [[ "$dry_run" == true ]]; then
-    log "would sync $source_image -> $namespace/$deployment on $target_node"
+    log "would sync $source_image -> $namespace/$deployment"
     continue
   fi
 
@@ -571,21 +581,22 @@ for row in "${sync_services[@]}"; do
   deployment_image=$immutable_image
   pull_policy=Never
 
-  media_type=$(
-    docker image inspect "$source_image" |
-      python3 -c 'import json, sys; print((json.load(sys.stdin)[0].get("Descriptor") or {}).get("mediaType", ""))'
-  )
-  if [[ "$media_type" == *".image.index."* ||
-        "$media_type" == *".manifest.list."* ]]; then
+  if [[ "$explicit_image" == 1 ]]; then
     registry_digest=$(
       docker image inspect "$source_image" |
         python3 -c 'import json, sys; print(next((item for item in json.load(sys.stdin)[0].get("RepoDigests", []) if not item.startswith("compose-sync/") and "/compose-sync/" not in item), ""))'
     )
-    [[ "$explicit_image" == 1 && -n "$registry_digest" ]] || die \
-      "$source_image is a multi-platform image without a registry digest"
+    [[ -n "$registry_digest" ]] || die "$source_image has no registry digest"
     deployment_image=$registry_digest
     pull_policy=IfNotPresent
-    log "using registry digest $deployment_image for multi-platform image"
+    log "using registry digest $deployment_image"
+  elif [[ -n "$registry_prefix" ]]; then
+    immutable_image="${registry_prefix}/${service}:${registry_tag}"
+    deployment_image=$immutable_image
+    pull_policy=IfNotPresent
+    log "publishing $source_image as $immutable_image"
+    docker image tag "$source_image" "$immutable_image"
+    docker push "$immutable_image" || die "docker push failed for $immutable_image"
   else
     log "importing $source_image as $immutable_image"
     docker image tag "$source_image" "$immutable_image"
@@ -597,6 +608,13 @@ for row in "${sync_services[@]}"; do
   [[ -n "$container" ]] || die "cannot determine container for $namespace/$deployment"
 
   apply_schema_patches "$namespace" "$deployment" "$service" "$source_image"
+
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
+    -p='[{"op":"replace","path":"/spec/template/spec/nodeSelector","value":{"baxic.ru/workload-pool":"main"}}]' \
+    >/dev/null
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
+    -p '{"spec":{"template":{"metadata":{"labels":{"baxic.ru/workload-pool":"main"}},"spec":{"imagePullSecrets":[{"name":"ghcr-pull"}],"topologySpreadConstraints":[{"maxSkew":1,"topologyKey":"kubernetes.io/hostname","whenUnsatisfiable":"ScheduleAnyway","labelSelector":{"matchLabels":{"baxic.ru/workload-pool":"main"}}}]}}}}' \
+    >/dev/null
 
   # hostPort workloads cannot use maxSurge on a single pinned node.
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type merge \
