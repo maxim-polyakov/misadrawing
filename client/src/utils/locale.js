@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import languagePack from "./galleryLanguagePack.json";
+import galleryLabels from "./galleryLabels.json";
 
 const STORAGE_KEY = "misa_gallery_locale";
 
@@ -46,6 +47,14 @@ export function setLanguage(language) {
     window.dispatchEvent(new CustomEvent("gallerylocalechange", { detail: language }));
 }
 
+export function translate(language, key) {
+    if (key === "gallery") {
+        return galleryLabels[language] || galleryLabels.en;
+    }
+
+    return (messages[language] || messages.en)[key] || messages.en[key] || key;
+}
+
 export function useLanguage() {
     const [language, updateLanguage] = useState(getLanguage);
 
@@ -59,6 +68,6 @@ export function useLanguage() {
     return {
         language,
         setLanguage,
-        t: (key) => (messages[language] || messages.en)[key] || messages.en[key] || key,
+        t: (key) => translate(language, key),
     };
 }

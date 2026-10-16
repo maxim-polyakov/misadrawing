@@ -1,4 +1,10 @@
-import { getLanguage, setLanguage, withLangQuery } from "./locale";
+import {
+    getLanguage,
+    LANGUAGES,
+    setLanguage,
+    translate,
+    withLangQuery,
+} from "./locale";
 
 describe("gallery locale URLs", () => {
     beforeEach(() => {
@@ -29,5 +35,17 @@ describe("gallery locale URLs", () => {
         expect(getLanguage()).toBe("de");
         setLanguage("de");
         expect(document.title).toBe("Misa Galerie");
+    });
+
+    test("localizes the Gallery button for every supported language", () => {
+        expect(translate("en", "gallery")).toBe("Gallery");
+        expect(translate("de", "gallery")).toBe("Galerie");
+        expect(translate("ar", "gallery")).toBe("معرض");
+        expect(translate("ja", "gallery")).toBe("ギャラリー");
+
+        LANGUAGES.forEach(({ code }) => {
+            expect(translate(code, "gallery")).toBeTruthy();
+            expect(translate(code, "gallery")).not.toBe("Misa Gallery");
+        });
     });
 });
