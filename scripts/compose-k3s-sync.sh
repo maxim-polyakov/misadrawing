@@ -43,6 +43,76 @@ die() {
   exit 1
 }
 
+apply_failover_patches() {
+  local namespace=$1 deployment=$2
+  local failover_patch
+  failover_patch=$(
+    "${kube[@]}" get deployment "$deployment" -n "$namespace" -o json |
+      python3 -c '
+import json, os, sys
+d = json.load(sys.stdin)
+pod = d["spec"]["template"]["spec"]
+selector = dict(pod.get("nodeSelector") or {})
+selector.pop("kubernetes.io/hostname", None)
+selector["baxic.ru/workload-pool"] = "main"
+tolerations = [
+    item for item in (pod.get("tolerations") or [])
+    if item.get("key") not in {
+        "node.kubernetes.io/not-ready",
+        "node.kubernetes.io/unreachable",
+    }
+]
+for key in ("node.kubernetes.io/not-ready", "node.kubernetes.io/unreachable"):
+    tolerations.append({
+        "key": key,
+        "operator": "Exists",
+        "effect": "NoExecute",
+        "tolerationSeconds": 120,
+    })
+containers = []
+for container in pod.get("containers") or []:
+    requests = dict((container.get("resources") or {}).get("requests") or {})
+    requests.setdefault("cpu", os.environ.get("COMPOSE_K3S_DEFAULT_CPU_REQUEST", "50m"))
+    requests.setdefault("memory", os.environ.get("COMPOSE_K3S_DEFAULT_MEMORY_REQUEST", "128Mi"))
+    containers.append({"name": container["name"], "resources": {"requests": requests}})
+print(json.dumps({
+    "spec": {"template": {
+        "metadata": {"labels": {"baxic.ru/workload-pool": "main"}},
+        "spec": {
+            "nodeSelector": selector,
+            "tolerations": tolerations,
+            "containers": containers,
+        },
+    }},
+}, separators=(",", ":")))
+'
+  )
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type strategic \
+    -p "$failover_patch" >/dev/null
+
+  local hostport_patch
+  hostport_patch=$(
+    "${kube[@]}" get deployment "$deployment" -n "$namespace" -o json |
+      python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+patch = []
+for ci, container in enumerate(d["spec"]["template"]["spec"].get("containers", [])):
+    for pi, port in reversed(list(enumerate(container.get("ports") or []))):
+        if "hostPort" in port:
+            patch.append({
+                "op": "remove",
+                "path": f"/spec/template/spec/containers/{ci}/ports/{pi}/hostPort",
+            })
+print(json.dumps(patch, separators=(",", ":")))
+'
+  )
+  if [[ "$hostport_patch" != "[]" ]]; then
+    "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
+      -p "$hostport_patch" >/dev/null
+  fi
+}
+
 sync_compose_service_environment() {
   local namespace=$1 deployment=$2 service=$3
   local env_patch status
@@ -144,6 +214,7 @@ print(
     log "Maildev/SMTP Deployment dnsConfig set for $namespace/$deployment"
     fix_maildev_container_command "$namespace" "$deployment" "$source_image" "$service"
   fi
+  apply_failover_patches "$namespace" "$deployment"
   log "schema patches applied for $namespace/$deployment"
 }
 
