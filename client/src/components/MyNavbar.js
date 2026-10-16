@@ -5,9 +5,11 @@ import { Button, Container, Nav } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { LOGIN_ROUTE, ADMIN_ROUTE, GALLERY_ROUTE } from "../utils/consts.js";
+import { LANGUAGES, useLanguage, withLangQuery } from "../utils/locale.js";
 
 const MyNavbar = observer(() => {
     const { user } = useContext(Context);
+    const { language, setLanguage, t } = useLanguage();
 
     const logOut = () => {
         user?.setUser({});
@@ -18,38 +20,51 @@ const MyNavbar = observer(() => {
     return (
             <Navbar bg="dark" data-bs-theme="dark">
                 <Container>
+                    <Navbar.Brand href={withLangQuery(GALLERY_ROUTE, language)}>
+                        Misa Gallery
+                    </Navbar.Brand>
                     {user?.isAuth ? (
                         <Nav className="ml-auto d-flex align-items-center gap-2">
-                            <Link to={GALLERY_ROUTE}>
+                            <Link to={withLangQuery(GALLERY_ROUTE, language)}>
                                 <Button variant="outline-light" size="sm">
-                                    Галерея
+                                    {t("gallery")}
                                 </Button>
                             </Link>
                             {user?.user?.role === "ADMIN" && (
-                                <Link to={ADMIN_ROUTE}>
+                                <Link to={withLangQuery(ADMIN_ROUTE, language)}>
                                     <Button variant="outline-info" size="sm">
-                                        Админ
+                                        {t("admin")}
                                     </Button>
                                 </Link>
                             )}
-                            <Link to={LOGIN_ROUTE}>
+                            <Link to={withLangQuery(LOGIN_ROUTE, language)}>
                                 <Button
                                     variant="outline-light"
                                     onClick={() => logOut()}
                                 >
-                                    Выйти
+                                    {t("logout")}
                                 </Button>
                             </Link>
                         </Nav>
                     ) : (
                         <Nav className="ml-auto">
-                            <Link to={LOGIN_ROUTE}>
+                            <Link to={withLangQuery(LOGIN_ROUTE, language)}>
                                 <Button variant="outline-light">
-                                    Авторизация
+                                    {t("authorization")}
                                 </Button>
                             </Link>
                         </Nav>
                     )}
+                    <select
+                        className="gallery-language-select ml-3"
+                        aria-label="Language"
+                        value={language}
+                        onChange={(event) => setLanguage(event.target.value)}
+                    >
+                        {LANGUAGES.map(({ code, label }) => (
+                            <option key={code} value={code}>{label}</option>
+                        ))}
+                    </select>
                 </Container>
             </Navbar>
     );

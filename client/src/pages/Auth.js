@@ -6,9 +6,11 @@ import { login, registration, getGoogleLoginUrl } from "../http/userApi.js";
 import { observer } from "mobx-react-lite";
 import { Context } from "../index.js";
 import { jwtDecode } from "jwt-decode";
+import { useLanguage, withLangQuery } from "../utils/locale.js";
 
 const Auth = observer(() => {
     const { user } = useContext(Context);
+    const { language, t } = useLanguage();
     const location = useLocation();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -27,12 +29,12 @@ const Auth = observer(() => {
             user.setUser(jwtDecode(token));
             user.setIsAuth(true);
             setSearchParams({});
-            navigate(GALLERY_ROUTE);
+            navigate(withLangQuery(GALLERY_ROUTE, language));
         } else if (errorParam === "google_auth_failed") {
             setError("Не удалось войти через Google. Попробуйте снова.");
             setSearchParams({});
         }
-    }, [searchParams, navigate, user, setSearchParams]);
+    }, [searchParams, navigate, user, setSearchParams, language]);
 
     const swapMethod = () => {
         setEmail("");
@@ -75,7 +77,7 @@ const Auth = observer(() => {
 
             setEmail("");
             setPassword("");
-            navigate(GALLERY_ROUTE);
+            navigate(withLangQuery(GALLERY_ROUTE, language));
 
         } catch (error) {
             console.log("Ошибка авторизации:", error);
@@ -91,7 +93,7 @@ const Auth = observer(() => {
         >
             <Card style={{ width: 700 }} className="p-5">
                 <h2 className="m-auto text-center">
-                    {isLogin ? "Авторизация" : "Регистрация"}
+                    {isLogin ? t("authorization") : t("registration")}
                 </h2>
 
                 {/* Отображение ошибок */}
@@ -107,14 +109,14 @@ const Auth = observer(() => {
                         className="w-100"
                         onClick={() => window.location.href = getGoogleLoginUrl()}
                     >
-                        Войти через Google
+                        {t("google")}
                     </Button>
                 </div>
                 <hr className="my-3" />
                 <Form className="d-flex flex-column">
                     <Form.Control
                         className="mt-3"
-                        placeholder="Введите email"
+                        placeholder={t("email")}
                         value={email}
                         onChange={(e) => {
                             setEmail(e.target.value);
@@ -124,7 +126,7 @@ const Auth = observer(() => {
                     />
                     <Form.Control
                         className="mt-2"
-                        placeholder="Введите пароль"
+                        placeholder={t("password")}
                         value={password}
                         onChange={(e) => {
                             setPassword(e.target.value);
@@ -137,26 +139,26 @@ const Auth = observer(() => {
                         <div>
                             {isLogin ? (
                                 <>
-                                    Нет аккаунта?
+                                    {t("noAccount")}
                                     <Link
-                                        to={REGISTRATION_ROUTE}
+                                        to={withLangQuery(REGISTRATION_ROUTE, language)}
                                         style={{ textDecoration: "none" }}
                                         onClick={() => swapMethod()}
                                     >
                                         {" "}
-                                        Регистрация
+                                        {t("registration")}
                                     </Link>
                                 </>
                             ) : (
                                 <>
-                                    Уже есть аккаунт?
+                                    {t("alreadyAccount")}
                                     <Link
-                                        to={LOGIN_ROUTE}
+                                        to={withLangQuery(LOGIN_ROUTE, language)}
                                         style={{ textDecoration: "none" }}
                                         onClick={() => swapMethod()}
                                     >
                                         {" "}
-                                        Войти
+                                        {t("signIn")}
                                     </Link>
                                 </>
                             )}
@@ -166,7 +168,7 @@ const Auth = observer(() => {
                             onClick={signIn}
                             disabled={!email.trim() || !password.trim()} // Кнопка неактивна при пустых полях
                         >
-                            {isLogin ? "Войти" : "Зарегистрироваться"}
+                            {isLogin ? t("authorization") : t("register")}
                         </Button>
                     </div>
                 </Form>

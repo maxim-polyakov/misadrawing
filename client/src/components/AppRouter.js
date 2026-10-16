@@ -5,10 +5,12 @@ import { authRoutes, publicRoutes } from "../Routes.js";
 import { observer } from "mobx-react-lite";
 import Gallery from "../pages/Gallery.js";
 import { LOGIN_ROUTE } from "../utils/consts.js";
+import { useLanguage, withLangQuery } from "../utils/locale.js";
 
 const AppRouter = observer(() => {
     const { user } = useContext(Context);
     const isAuth = user?.isAuth;
+    const { language } = useLanguage();
 
     console.log("User auth status:", user?.isAuth);
 
@@ -36,7 +38,7 @@ const AppRouter = observer(() => {
             {/* КОРНЕВОЙ ПУТЬ - ВСЕГДА перенаправляем на логин */}
             <Route
                 path="/"
-                element={<Navigate to={LOGIN_ROUTE} replace />}
+                element={<Navigate to={withLangQuery(LOGIN_ROUTE, language)} replace />}
             />
 
             {/* Для всех других путей: если авторизован - галерея, если нет - логин */}
@@ -45,7 +47,7 @@ const AppRouter = observer(() => {
                 element={
                     isAuth ?
                         <Gallery /> :
-                        <Navigate to={LOGIN_ROUTE} replace />
+                        <Navigate to={withLangQuery(LOGIN_ROUTE, language)} replace />
                 }
             />
         </Routes>

@@ -5,9 +5,11 @@ import { Link } from "react-router-dom";
 import { Context } from "../index.js";
 import { uploadImage, uploadBackground } from "../http/imageApi.js";
 import { GALLERY_ROUTE } from "../utils/consts.js";
+import { useLanguage, withLangQuery } from "../utils/locale.js";
 
 const Admin = observer(() => {
     const { user } = useContext(Context);
+    const { language } = useLanguage();
     const [imageUploading, setImageUploading] = useState(false);
     const [bgUploading, setBgUploading] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
@@ -54,7 +56,7 @@ const Admin = observer(() => {
         return (
             <Container className="py-5">
                 <Alert variant="danger">Доступ запрещён</Alert>
-                <Link to={GALLERY_ROUTE}>Вернуться в галерею</Link>
+                <Link to={withLangQuery(GALLERY_ROUTE, language)}>Вернуться в галерею</Link>
             </Container>
         );
     }
@@ -117,7 +119,7 @@ const Admin = observer(() => {
                 </Card>
             </div>
 
-            <Link to={GALLERY_ROUTE} className="mt-4 d-inline-block">
+            <Link to={withLangQuery(GALLERY_ROUTE, language)} className="mt-4 d-inline-block">
                 ← Вернуться в галерею
             </Link>
         </Container>

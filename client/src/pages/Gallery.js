@@ -3,9 +3,11 @@ import { useContext, useState, useEffect } from "react";
 import { Context } from "../index.js";
 import { getImages, deleteImage } from "../http/imageApi.js";
 import "./Gallery.css";
+import { useLanguage } from "../utils/locale.js";
 
 const Gallery = observer(() => {
     const { user } = useContext(Context);
+    const { t } = useLanguage();
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [backgroundUrl, setBackgroundUrl] = useState("");
@@ -23,7 +25,7 @@ const Gallery = observer(() => {
 
     const handleDelete = async (e, id) => {
         e.stopPropagation();
-        if (!window.confirm("Удалить картинку?")) return;
+        if (!window.confirm(t("deleteImage"))) return;
         setDeletingId(id);
         try {
             await deleteImage(id);
@@ -42,9 +44,9 @@ const Gallery = observer(() => {
         >
             <div className="gallery">
                 {loading ? (
-                    <div>Загрузка...</div>
+                    <div>{t("loading")}</div>
                 ) : images.length === 0 ? (
-                    <div>Нет изображений. Загрузите первую картинку.</div>
+                    <div>{t("noImages")}</div>
                 ) : (
                     images.map((img, i) => (
                         <div key={img.id || i} className="gallery-item">

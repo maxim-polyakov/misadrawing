@@ -14,14 +14,12 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-# Устанавливаем serve для отдачи статики
-RUN yarn global add serve && yarn cache clean
-
-# В итоговый образ попадает только собранная статика (без node_modules),
-# чтобы образ был маленьким и быстро импортировался в k3s
+# В итоговый образ попадают собранная статика и небольшой HTTP-сервер,
+# который подставляет локализованные Open Graph метаданные.
 COPY --from=build /app/build ./build
+COPY server.cjs ./server.cjs
+COPY src/utils/galleryLanguagePack.json ./galleryLanguagePack.json
 
 EXPOSE 3000
 
-# Запуск production-бандла
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["node", "server.cjs"]

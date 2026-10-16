@@ -1,0 +1,1909 @@
+{
+  "version": 2,
+  "languages": [
+    {
+      "code": "en",
+      "label": "English"
+    },
+    {
+      "code": "ru",
+      "label": "Русский"
+    },
+    {
+      "code": "de",
+      "label": "Deutsch"
+    },
+    {
+      "code": "ar",
+      "label": "العربية"
+    },
+    {
+      "code": "sq",
+      "label": "Shqip"
+    },
+    {
+      "code": "am",
+      "label": "አማርኛ"
+    },
+    {
+      "code": "hy",
+      "label": "Հայերեն"
+    },
+    {
+      "code": "az",
+      "label": "Azərbaycan"
+    },
+    {
+      "code": "eu",
+      "label": "Euskara"
+    },
+    {
+      "code": "be",
+      "label": "Беларуская"
+    },
+    {
+      "code": "bn",
+      "label": "বাংলা"
+    },
+    {
+      "code": "bg",
+      "label": "Български"
+    },
+    {
+      "code": "my",
+      "label": "မြန်မာဘာသာ"
+    },
+    {
+      "code": "ca",
+      "label": "Català"
+    },
+    {
+      "code": "zh",
+      "label": "简体中文"
+    },
+    {
+      "code": "zh-TW",
+      "label": "繁體中文"
+    },
+    {
+      "code": "hr",
+      "label": "Hrvatski"
+    },
+    {
+      "code": "cs",
+      "label": "Čeština"
+    },
+    {
+      "code": "da",
+      "label": "Dansk"
+    },
+    {
+      "code": "nl",
+      "label": "Nederlands"
+    },
+    {
+      "code": "et",
+      "label": "Eesti"
+    },
+    {
+      "code": "fi",
+      "label": "Suomi"
+    },
+    {
+      "code": "fr",
+      "label": "Français"
+    },
+    {
+      "code": "gl",
+      "label": "Galego"
+    },
+    {
+      "code": "ka",
+      "label": "ქართული"
+    },
+    {
+      "code": "el",
+      "label": "Ελληνικά"
+    },
+    {
+      "code": "he",
+      "label": "עברית"
+    },
+    {
+      "code": "hi",
+      "label": "हिन्दी"
+    },
+    {
+      "code": "hu",
+      "label": "Magyar"
+    },
+    {
+      "code": "is",
+      "label": "Íslenska"
+    },
+    {
+      "code": "id",
+      "label": "Bahasa Indonesia"
+    },
+    {
+      "code": "ga",
+      "label": "Gaeilge"
+    },
+    {
+      "code": "it",
+      "label": "Italiano"
+    },
+    {
+      "code": "ja",
+      "label": "日本語"
+    },
+    {
+      "code": "kn",
+      "label": "ಕನ್ನಡ"
+    },
+    {
+      "code": "kk",
+      "label": "Қазақша"
+    },
+    {
+      "code": "km",
+      "label": "ភាសាខ្មែរ"
+    },
+    {
+      "code": "ko",
+      "label": "한국어"
+    },
+    {
+      "code": "lo",
+      "label": "ພາສາລາວ"
+    },
+    {
+      "code": "lv",
+      "label": "Latviešu"
+    },
+    {
+      "code": "lt",
+      "label": "Lietuvių"
+    },
+    {
+      "code": "mk",
+      "label": "Македонски"
+    },
+    {
+      "code": "ms",
+      "label": "Bahasa Melayu"
+    },
+    {
+      "code": "ml",
+      "label": "മലയാളം"
+    },
+    {
+      "code": "mt",
+      "label": "Malti"
+    },
+    {
+      "code": "mr",
+      "label": "मराठी"
+    },
+    {
+      "code": "mn",
+      "label": "Монгол"
+    },
+    {
+      "code": "ne",
+      "label": "नेपाली"
+    },
+    {
+      "code": "nb",
+      "label": "Norsk (bokmål)"
+    },
+    {
+      "code": "fa",
+      "label": "فارسی"
+    },
+    {
+      "code": "pl",
+      "label": "Polski"
+    },
+    {
+      "code": "pt",
+      "label": "Português"
+    },
+    {
+      "code": "pa",
+      "label": "ਪੰਜਾਬੀ"
+    },
+    {
+      "code": "ro",
+      "label": "Română"
+    },
+    {
+      "code": "sr",
+      "label": "Српски"
+    },
+    {
+      "code": "si",
+      "label": "සිංහල"
+    },
+    {
+      "code": "sk",
+      "label": "Slovenčina"
+    },
+    {
+      "code": "sl",
+      "label": "Slovenščina"
+    },
+    {
+      "code": "es",
+      "label": "Español"
+    },
+    {
+      "code": "sw",
+      "label": "Kiswahili"
+    },
+    {
+      "code": "tl",
+      "label": "Tagalog"
+    },
+    {
+      "code": "tg",
+      "label": "Тоҷикӣ"
+    },
+    {
+      "code": "th",
+      "label": "ภาษาไทย"
+    },
+    {
+      "code": "tr",
+      "label": "Türkçe"
+    },
+    {
+      "code": "uk",
+      "label": "Українська"
+    },
+    {
+      "code": "ur",
+      "label": "اردو"
+    },
+    {
+      "code": "uz",
+      "label": "Oʻzbek"
+    },
+    {
+      "code": "vi",
+      "label": "Tiếng Việt"
+    },
+    {
+      "code": "cy",
+      "label": "Cymraeg"
+    },
+    {
+      "code": "xh",
+      "label": "isiXhosa"
+    },
+    {
+      "code": "yi",
+      "label": "ייִדיש"
+    },
+    {
+      "code": "yo",
+      "label": "Yorùbá"
+    },
+    {
+      "code": "zu",
+      "label": "isiZulu"
+    },
+    {
+      "code": "gu",
+      "label": "ગુજરાતી"
+    },
+    {
+      "code": "haw",
+      "label": "ʻŌlelo Hawaiʻi"
+    },
+    {
+      "code": "ig",
+      "label": "Igbo"
+    }
+  ],
+  "translations": {
+    "en": {
+      "authorization": "Sign in",
+      "registration": "Registration",
+      "email": "Enter email",
+      "password": "Enter password",
+      "google": "Sign in with Google",
+      "noAccount": "No account?",
+      "alreadyAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "register": "Sign up",
+      "logout": "Log out",
+      "loading": "Loading...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ru": {
+      "authorization": "Авторизация",
+      "registration": "Регистрация",
+      "email": "Введите email",
+      "password": "Введите пароль",
+      "google": "Войти через Google",
+      "noAccount": "Нет аккаунта?",
+      "alreadyAccount": "Уже есть аккаунт?",
+      "signIn": "Войти",
+      "register": "Зарегистрироваться",
+      "logout": "Выйти",
+      "loading": "Загрузка...",
+      "gallery": "Галерея",
+      "admin": "Админ",
+      "deleteImage": "Удалить картинку?",
+      "noImages": "Нет изображений. Загрузите первую картинку."
+    },
+    "de": {
+      "authorization": "Anmeldung",
+      "registration": "Registrierung",
+      "email": "E-Mail eingeben",
+      "password": "Passwort eingeben",
+      "google": "Mit Google anmelden",
+      "noAccount": "Kein Konto?",
+      "alreadyAccount": "Bereits Konto?",
+      "signIn": "Anmelden",
+      "register": "Registrieren",
+      "logout": "Abmelden",
+      "loading": "Laden...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ar": {
+      "authorization": "تسجيل الدخول",
+      "registration": "التسجيل",
+      "email": "أدخل البريد الإلكتروني",
+      "password": "أدخل كلمة المرور",
+      "google": "تسجيل الدخول عبر Google",
+      "noAccount": "لا يوجد حساب؟",
+      "alreadyAccount": "لديك حساب بالفعل؟",
+      "signIn": "تسجيل الدخول",
+      "register": "التسجيل",
+      "logout": "تسجيل الخروج",
+      "loading": "جاري التحميل...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "sq": {
+      "authorization": "Hyr",
+      "registration": "Regjistrimi",
+      "email": "Vendosni email",
+      "password": "Vendosni fjalëkalimin",
+      "google": "Hyni me Google",
+      "noAccount": "Nuk keni llogari?",
+      "alreadyAccount": "Keni tashmë llogari?",
+      "signIn": "Hyr",
+      "register": "Regjistrohu",
+      "logout": "Dil",
+      "loading": "Duke u ngarkuar...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "am": {
+      "authorization": "ግባ",
+      "registration": "ምዝገባ",
+      "email": "ኢሜይል ያስገቡ",
+      "password": "የይለፍ ቃል ያስገቡ",
+      "google": "በ Google ተግብር",
+      "noAccount": "መለያ የለዎትም?",
+      "alreadyAccount": "መለያ አለዎት?",
+      "signIn": "ግባ",
+      "register": "ይመዝገቡ",
+      "logout": "ውጣ",
+      "loading": "በመጫን ላይ...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "hy": {
+      "authorization": "Մուտք",
+      "registration": "Գրանցում",
+      "email": "Մուտքագրեք էլ. փոստ",
+      "password": "Մուտքագրեք գաղտնաբառ",
+      "google": "Մուտք Google-ով",
+      "noAccount": "Հաշիվ չունե՞ք",
+      "alreadyAccount": "Արդեն հաշիվ ունե՞ք",
+      "signIn": "Մուտք",
+      "register": "Գրանցվել",
+      "logout": "Դուրս գալ",
+      "loading": "Բեռնվում է...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "az": {
+      "authorization": "Daxil ol",
+      "registration": "Qeydiyyat",
+      "email": "E-poçt daxil edin",
+      "password": "Parol daxil edin",
+      "google": "Google ilə daxil olun",
+      "noAccount": "Hesabınız yoxdur?",
+      "alreadyAccount": "Artıq hesabınız var?",
+      "signIn": "Daxil ol",
+      "register": "Qeydiyyat",
+      "logout": "Çıxış",
+      "loading": "Yüklənir...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "eu": {
+      "authorization": "Hasi saioa",
+      "registration": "Erregistroa",
+      "email": "Sartu e-posta",
+      "password": "Sartu pasahitza",
+      "google": "Hasi saioa Google-rekin",
+      "noAccount": "Konturik ez?",
+      "alreadyAccount": "Kontua baduzu?",
+      "signIn": "Hasi saioa",
+      "register": "Erregistratu",
+      "logout": "Irten",
+      "loading": "Kargatzen...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "be": {
+      "authorization": "Уваход",
+      "registration": "Рэгістрацыя",
+      "email": "Увядзіце email",
+      "password": "Увядзіце пароль",
+      "google": "Увайсці праз Google",
+      "noAccount": "Няма акаунта?",
+      "alreadyAccount": "Ужо ёсць акаунт?",
+      "signIn": "Увайсці",
+      "register": "Рэгістрацыя",
+      "logout": "Выйсці",
+      "loading": "Загрузка...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "bn": {
+      "authorization": "সাইন ইন করুন",
+      "registration": "নিবন্ধন",
+      "email": "ইমেইল লিখুন",
+      "password": "পাসওয়ার্ড লিখুন",
+      "google": "Google দিয়ে সাইন ইন করুন",
+      "noAccount": "অ্যাকাউন্ট নেই?",
+      "alreadyAccount": "ইতিমধ্যে অ্যাকাউন্ট আছে?",
+      "signIn": "সাইন ইন",
+      "register": "নিবন্ধন",
+      "logout": "লগ আউট",
+      "loading": "লোড হচ্ছে...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "bg": {
+      "authorization": "Вход",
+      "registration": "Регистрация",
+      "email": "Въведете имейл",
+      "password": "Въведете парола",
+      "google": "Вход с Google",
+      "noAccount": "Нямате акаунт?",
+      "alreadyAccount": "Вече имате акаунт?",
+      "signIn": "Вход",
+      "register": "Регистрация",
+      "logout": "Изход",
+      "loading": "Зареждане...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "my": {
+      "authorization": "အကောင့်ဝင်",
+      "registration": "မှတ်ပုံတင်",
+      "email": "အီးမေးလ်ထည့်ပါ",
+      "password": "စကားဝှက်ထည့်ပါ",
+      "google": "Google ဖြင့် ဝင်ရောက်ပါ",
+      "noAccount": "အကောင့်မရှိပါသလား",
+      "alreadyAccount": "အကောင့်ရှိပြီးသားလား",
+      "signIn": "ဝင်ရောက်ပါ",
+      "register": "မှတ်ပုံတင်ပါ",
+      "logout": "ထွက်မည်",
+      "loading": "တင်နေသည်...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ca": {
+      "authorization": "Iniciar sessió",
+      "registration": "Registre",
+      "email": "Introduïu l'email",
+      "password": "Introduïu la contrasenya",
+      "google": "Iniciar sessió amb Google",
+      "noAccount": "Sense compte?",
+      "alreadyAccount": "Ja tens compte?",
+      "signIn": "Iniciar sessió",
+      "register": "Registrar-se",
+      "logout": "Tancar sessió",
+      "loading": "Carregant...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "zh": {
+      "authorization": "登录",
+      "registration": "注册",
+      "email": "输入邮箱",
+      "password": "输入密码",
+      "google": "使用 Google 登录",
+      "noAccount": "没有账号？",
+      "alreadyAccount": "已有账号？",
+      "signIn": "登录",
+      "register": "注册",
+      "logout": "退出",
+      "loading": "加载中...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "zh-TW": {
+      "authorization": "登录",
+      "registration": "注册",
+      "email": "輸入電子郵件",
+      "password": "輸入密碼",
+      "google": "使用 Google 登入",
+      "noAccount": "沒有帳號？",
+      "alreadyAccount": "已有帳號？",
+      "signIn": "登入",
+      "register": "註冊",
+      "logout": "登出",
+      "loading": "載入中...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "hr": {
+      "authorization": "Prijava",
+      "registration": "Registracija",
+      "email": "Unesite email",
+      "password": "Unesite lozinku",
+      "google": "Prijavite se putem Googlea",
+      "noAccount": "Nemate račun?",
+      "alreadyAccount": "Već imate račun?",
+      "signIn": "Prijava",
+      "register": "Registracija",
+      "logout": "Odjava",
+      "loading": "Učitavanje...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "cs": {
+      "authorization": "Přihlášení",
+      "registration": "Registrace",
+      "email": "Zadejte e-mail",
+      "password": "Zadejte heslo",
+      "google": "Přihlásit se přes Google",
+      "noAccount": "Nemáte účet?",
+      "alreadyAccount": "Už máte účet?",
+      "signIn": "Přihlásit se",
+      "register": "Registrovat",
+      "logout": "Odhlásit",
+      "loading": "Načítání...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "da": {
+      "authorization": "Log ind",
+      "registration": "Registrering",
+      "email": "Indtast e-mail",
+      "password": "Indtast adgangskode",
+      "google": "Log ind med Google",
+      "noAccount": "Ingen konto?",
+      "alreadyAccount": "Har du allerede en konto?",
+      "signIn": "Log ind",
+      "register": "Tilmelding",
+      "logout": "Log ud",
+      "loading": "Indlæser...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "nl": {
+      "authorization": "Inloggen",
+      "registration": "Registratie",
+      "email": "Voer e-mail in",
+      "password": "Voer wachtwoord in",
+      "google": "Inloggen met Google",
+      "noAccount": "Geen account?",
+      "alreadyAccount": "Al een account?",
+      "signIn": "Inloggen",
+      "register": "Registreren",
+      "logout": "Uitloggen",
+      "loading": "Laden...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "et": {
+      "authorization": "Logi sisse",
+      "registration": "Registreerimine",
+      "email": "Sisesta e-post",
+      "password": "Sisesta parool",
+      "google": "Logi sisse Google'iga",
+      "noAccount": "Pole kontot?",
+      "alreadyAccount": "Kontot juba on?",
+      "signIn": "Logi sisse",
+      "register": "Registreeru",
+      "logout": "Logi välja",
+      "loading": "Laadimine...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "fi": {
+      "authorization": "Kirjaudu sisään",
+      "registration": "Rekisteröinti",
+      "email": "Syötä sähköposti",
+      "password": "Syötä salasana",
+      "google": "Kirjaudu Googlella",
+      "noAccount": "Ei tiliä?",
+      "alreadyAccount": "Onko sinulla jo tili?",
+      "signIn": "Kirjaudu",
+      "register": "Rekisteröidy",
+      "logout": "Kirjaudu ulos",
+      "loading": "Ladataan...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "fr": {
+      "authorization": "Connexion",
+      "registration": "Inscription",
+      "email": "Entrer l'e-mail",
+      "password": "Entrer le mot de passe",
+      "google": "Se connecter avec Google",
+      "noAccount": "Pas de compte?",
+      "alreadyAccount": "Déjà un compte?",
+      "signIn": "Connexion",
+      "register": "S'inscrire",
+      "logout": "Se déconnecter",
+      "loading": "Chargement...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "gl": {
+      "authorization": "Iniciar sesión",
+      "registration": "Rexistro",
+      "email": "Introduce o correo",
+      "password": "Introduce o contrasinal",
+      "google": "Iniciar sesión con Google",
+      "noAccount": "Non tes conta?",
+      "alreadyAccount": "Xa tes conta?",
+      "signIn": "Iniciar sesión",
+      "register": "Rexistrarse",
+      "logout": "Saír",
+      "loading": "Cargando...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ka": {
+      "authorization": "შესვლა",
+      "registration": "რეგისტრაცია",
+      "email": "შეიყვანეთ ელფოსტა",
+      "password": "შეიყვანეთ პაროლი",
+      "google": "შესვლა Google-ით",
+      "noAccount": "არ გაქვთ ანგარიში?",
+      "alreadyAccount": "უკვე გაქვთ ანგარიში?",
+      "signIn": "შესვლა",
+      "register": "რეგისტრაცია",
+      "logout": "გასვლა",
+      "loading": "იტვირთება...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "el": {
+      "authorization": "Σύνδεση",
+      "registration": "Εγγραφή",
+      "email": "Εισάγετε email",
+      "password": "Εισάγετε κωδικό",
+      "google": "Σύνδεση με Google",
+      "noAccount": "Δεν έχετε λογαριασμό;",
+      "alreadyAccount": "Έχετε ήδη λογαριασμό;",
+      "signIn": "Σύνδεση",
+      "register": "Εγγραφή",
+      "logout": "Έξοδος",
+      "loading": "Φόρτωση...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "he": {
+      "authorization": "התחברות",
+      "registration": "הרשמה",
+      "email": "הזן אימייל",
+      "password": "הזן סיסמה",
+      "google": "התחבר עם Google",
+      "noAccount": "אין חשבון?",
+      "alreadyAccount": "כבר יש חשבון?",
+      "signIn": "התחבר",
+      "register": "הרשם",
+      "logout": "התנתק",
+      "loading": "טוען...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "hi": {
+      "authorization": "साइन इन करें",
+      "registration": "पंजीकरण",
+      "email": "ईमेल दर्ज करें",
+      "password": "पासवर्ड दर्ज करें",
+      "google": "Google से साइन इन करें",
+      "noAccount": "खाता नहीं है?",
+      "alreadyAccount": "पहले से खाता है?",
+      "signIn": "साइन इन करें",
+      "register": "रजिस्टर करें",
+      "logout": "लॉग आउट",
+      "loading": "लोड हो रहा है...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "hu": {
+      "authorization": "Bejelentkezés",
+      "registration": "Regisztráció",
+      "email": "E-mail megadása",
+      "password": "Jelszó megadása",
+      "google": "Bejelentkezés Google-lel",
+      "noAccount": "Nincs fiók?",
+      "alreadyAccount": "Már van fiókod?",
+      "signIn": "Bejelentkezés",
+      "register": "Regisztráció",
+      "logout": "Kijelentkezés",
+      "loading": "Betöltés...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "is": {
+      "authorization": "Skrá inn",
+      "registration": "Nýskráning",
+      "email": "Sláðu inn netfang",
+      "password": "Sláðu inn lykilorð",
+      "google": "Skrá inn með Google",
+      "noAccount": "Ekkert reikning?",
+      "alreadyAccount": "Ertu þegar með reikning?",
+      "signIn": "Skrá inn",
+      "register": "Nýskráning",
+      "logout": "Skrá út",
+      "loading": "Hleð...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "id": {
+      "authorization": "Masuk",
+      "registration": "Daftar",
+      "email": "Masukkan email",
+      "password": "Masukkan kata sandi",
+      "google": "Masuk dengan Google",
+      "noAccount": "Belum punya akun?",
+      "alreadyAccount": "Sudah punya akun?",
+      "signIn": "Masuk",
+      "register": "Daftar",
+      "logout": "Keluar",
+      "loading": "Memuat...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ga": {
+      "authorization": "Logáil isteach",
+      "registration": "Clárú",
+      "email": "Cuir isteach ríomhphost",
+      "password": "Cuir isteach pasfhocal",
+      "google": "Logáil isteach le Google",
+      "noAccount": "Níl cuntas agat?",
+      "alreadyAccount": "Tá cuntas agat cheana?",
+      "signIn": "Logáil isteach",
+      "register": "Cláraigh",
+      "logout": "Logáil amach",
+      "loading": "Ag lódáil...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "it": {
+      "authorization": "Accesso",
+      "registration": "Registrazione",
+      "email": "Inserisci email",
+      "password": "Inserisci password",
+      "google": "Accedi con Google",
+      "noAccount": "Nessun account?",
+      "alreadyAccount": "Hai già un account?",
+      "signIn": "Accedi",
+      "register": "Registrati",
+      "logout": "Esci",
+      "loading": "Caricamento...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ja": {
+      "authorization": "ログイン",
+      "registration": "新規登録",
+      "email": "メールアドレスを入力",
+      "password": "パスワードを入力",
+      "google": "Googleでログイン",
+      "noAccount": "アカウントがない？",
+      "alreadyAccount": "既にアカウントがあります？",
+      "signIn": "ログイン",
+      "register": "新規登録",
+      "logout": "ログアウト",
+      "loading": "読み込み中...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "kn": {
+      "authorization": "ಸೈನ್ ಇನ್ ಮಾಡಿ",
+      "registration": "ನೋಂದಣಿ",
+      "email": "ಇಮೇಲ್ ನಮೂದಿಸಿ",
+      "password": "ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ",
+      "google": "Google ಜೊತೆ ಸೈನ್ ಇನ್ ಮಾಡಿ",
+      "noAccount": "ಖಾತೆ ಇಲ್ಲವೇ?",
+      "alreadyAccount": "ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ?",
+      "signIn": "ಸೈನ್ ಇನ್ ಮಾಡಿ",
+      "register": "ನೋಂದಾಯಿಸಿ",
+      "logout": "ಲಾಗ್ ಔಟ್",
+      "loading": "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "kk": {
+      "authorization": "Кіру",
+      "registration": "Тіркелу",
+      "email": "Email енгізіңіз",
+      "password": "Құпия сөзді енгізіңіз",
+      "google": "Google арқылы кіру",
+      "noAccount": "Аккаунт жоқ па?",
+      "alreadyAccount": "Аккаунтыңыз бар ма?",
+      "signIn": "Кіру",
+      "register": "Тіркелу",
+      "logout": "Шығу",
+      "loading": "Жүктелуде...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "km": {
+      "authorization": "ចូល",
+      "registration": "ចុះឈ្មោះ",
+      "email": "បញ្ចូលអ៉ីមែល",
+      "password": "បញ្ចូលពាក្យសម្ងាត់",
+      "google": "ចូលដោយ Google",
+      "noAccount": "មិនមានគណនីទេ?",
+      "alreadyAccount": "មានគណនីរួចហើយ?",
+      "signIn": "ចូល",
+      "register": "ចុះឈ្មោះ",
+      "logout": "ចាកចេញ",
+      "loading": "កំពុងផ្ទុក...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ko": {
+      "authorization": "로그인",
+      "registration": "회원가입",
+      "email": "이메일 입력",
+      "password": "비밀번호 입력",
+      "google": "Google로 로그인",
+      "noAccount": "계정이 없으신가요?",
+      "alreadyAccount": "이미 계정이 있으신가요?",
+      "signIn": "로그인",
+      "register": "회원가입",
+      "logout": "로그아웃",
+      "loading": "로딩 중...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "lo": {
+      "authorization": "ເຂົ້າສູ່ລະບົບ",
+      "registration": "ລົງທະບຽນ",
+      "email": "ປ້ອນອີເມວ",
+      "password": "ປ້ອນລະຫັດຜ່ານ",
+      "google": "ເຂົ້າສູ່ລະບົບດ້ວຍ Google",
+      "noAccount": "ບໍ່ມີບັນຊີ?",
+      "alreadyAccount": "ມີບັນຊີແລ້ວ?",
+      "signIn": "ເຂົ້າສູ່ລະບົບ",
+      "register": "ລົງທະບຽນ",
+      "logout": "ອອກລະບົບ",
+      "loading": "ກຳລັງໂຫລດ...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "lv": {
+      "authorization": "Pieslēgties",
+      "registration": "Reģistrācija",
+      "email": "Ievadiet e-pastu",
+      "password": "Ievadiet paroli",
+      "google": "Pieslēgties ar Google",
+      "noAccount": "Nav konta?",
+      "alreadyAccount": "Jau ir konts?",
+      "signIn": "Pieslēgties",
+      "register": "Reģistrēties",
+      "logout": "Iziet",
+      "loading": "Ielādē...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "lt": {
+      "authorization": "Prisijungti",
+      "registration": "Registracija",
+      "email": "Įveskite el. paštą",
+      "password": "Įveskite slaptažodį",
+      "google": "Prisijungti su Google",
+      "noAccount": "Neturite paskyros?",
+      "alreadyAccount": "Jau turite paskyrą?",
+      "signIn": "Prisijungti",
+      "register": "Registruotis",
+      "logout": "Atsijungti",
+      "loading": "Kraunama...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "mk": {
+      "authorization": "Најава",
+      "registration": "Регистрација",
+      "email": "Внесете е-пошта",
+      "password": "Внесете лозинка",
+      "google": "Најава со Google",
+      "noAccount": "Немате сметка?",
+      "alreadyAccount": "Веќе имате сметка?",
+      "signIn": "Најава",
+      "register": "Регистрација",
+      "logout": "Одјава",
+      "loading": "Се вчитува...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ms": {
+      "authorization": "Log masuk",
+      "registration": "Pendaftaran",
+      "email": "Masukkan e-mel",
+      "password": "Masukkan kata laluan",
+      "google": "Daftar masuk dengan Google",
+      "noAccount": "Tiada akaun?",
+      "alreadyAccount": "Sudah ada akaun?",
+      "signIn": "Daftar masuk",
+      "register": "Daftar",
+      "logout": "Log keluar",
+      "loading": "Memuatkan...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ml": {
+      "authorization": "സൈൻ ഇൻ ചെയ്യുക",
+      "registration": "രജിസ്ട്രേഷൻ",
+      "email": "ഇമെയിൽ നൽകുക",
+      "password": "പാസ്വേഡ് നൽകുക",
+      "google": "Google ഉപയോഗിച്ച് പ്രവേശിക്കുക",
+      "noAccount": "അക്കൗണ്ട് ഇല്ലേ?",
+      "alreadyAccount": "അക്കൗണ്ട് ഉണ്ടോ?",
+      "signIn": "പ്രവേശിക്കുക",
+      "register": "രജിസ്റ്റർ ചെയ്യുക",
+      "logout": "ലോഗൗട്ട്",
+      "loading": "ലോഡ് ചെയ്യുന്നു...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "mt": {
+      "authorization": "Idħol",
+      "registration": "Reġistrazzjoni",
+      "email": "Daħħal email",
+      "password": "Daħħal password",
+      "google": "Idħol b'Google",
+      "noAccount": "M'għandekx kont?",
+      "alreadyAccount": "Diġà għandek kont?",
+      "signIn": "Idħol",
+      "register": "Irreġistra",
+      "logout": "Oħroġ",
+      "loading": "Qed jitgħabba...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "mr": {
+      "authorization": "साइन इन करा",
+      "registration": "नोंदणी",
+      "email": "ईमेल प्रविष्ट करा",
+      "password": "पासवर्ड प्रविष्ट करा",
+      "google": "Google द्वारे साइन इन करा",
+      "noAccount": "खाते नाही?",
+      "alreadyAccount": "आधीच खाते आहे?",
+      "signIn": "साइन इन करा",
+      "register": "नोंदणी करा",
+      "logout": "लॉग आउट",
+      "loading": "लोड होत आहे...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "mn": {
+      "authorization": "Нэвтрэх",
+      "registration": "Бүртгүүлэх",
+      "email": "Имэйл оруулна уу",
+      "password": "Нууц үг оруулна уу",
+      "google": "Google-ээр нэвтрэх",
+      "noAccount": "Бүртгэл байхгүй юу?",
+      "alreadyAccount": "Бүртгэлтэй юу?",
+      "signIn": "Нэвтрэх",
+      "register": "Бүртгүүлэх",
+      "logout": "Гарах",
+      "loading": "Уншиж байна...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ne": {
+      "authorization": "साइन इन गर्नुहोस्",
+      "registration": "दर्ता",
+      "email": "इमेल प्रविष्ट गर्नुहोस्",
+      "password": "पासवर्ड प्रविष्ट गर्नुहोस्",
+      "google": "Google द्वारा साइन इन गर्नुहोस्",
+      "noAccount": "खाता छैन?",
+      "alreadyAccount": "पहिले नै खाता छ?",
+      "signIn": "साइन इन गर्नुहोस्",
+      "register": "दर्ता गर्नुहोस्",
+      "logout": "लगआउट",
+      "loading": "लोड हुँदैछ...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "nb": {
+      "authorization": "Logg inn",
+      "registration": "Registrering",
+      "email": "Skriv inn e-post",
+      "password": "Skriv inn passord",
+      "google": "Logg inn med Google",
+      "noAccount": "Ingen konto?",
+      "alreadyAccount": "Har du allerede konto?",
+      "signIn": "Logg inn",
+      "register": "Registrer deg",
+      "logout": "Logg ut",
+      "loading": "Laster...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "fa": {
+      "authorization": "ورود",
+      "registration": "ثبت‌نام",
+      "email": "ایمیل را وارد کنید",
+      "password": "رمز عبور را وارد کنید",
+      "google": "ورود با Google",
+      "noAccount": "حساب ندارید؟",
+      "alreadyAccount": "قبلاً حساب دارید؟",
+      "signIn": "ورود",
+      "register": "ثبت‌نام",
+      "logout": "خروج",
+      "loading": "در حال بارگذاری...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "pl": {
+      "authorization": "Logowanie",
+      "registration": "Rejestracja",
+      "email": "Wpisz email",
+      "password": "Wpisz hasło",
+      "google": "Zaloguj przez Google",
+      "noAccount": "Brak konta?",
+      "alreadyAccount": "Masz już konto?",
+      "signIn": "Zaloguj",
+      "register": "Zarejestruj się",
+      "logout": "Wyloguj",
+      "loading": "Ładowanie...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "pt": {
+      "authorization": "Entrar",
+      "registration": "Registro",
+      "email": "Digite o email",
+      "password": "Digite a senha",
+      "google": "Entrar com Google",
+      "noAccount": "Sem conta?",
+      "alreadyAccount": "Já tem conta?",
+      "signIn": "Entrar",
+      "register": "Cadastrar",
+      "logout": "Sair",
+      "loading": "Carregando...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "pa": {
+      "authorization": "ਸਾਇਨ ਇਨ ਕਰੋ",
+      "registration": "ਰਜਿਸਟਰੇਸ਼ਨ",
+      "email": "ਈਮੇਲ ਦਾਖਲ ਕਰੋ",
+      "password": "ਪਾਸਵਰਡ ਦਾਖਲ ਕਰੋ",
+      "google": "Google ਨਾਲ ਸਾਈਨ ਇਨ ਕਰੋ",
+      "noAccount": "ਖਾਤਾ ਨਹੀਂ ਹੈ?",
+      "alreadyAccount": "ਪਹਿਲਾਂ ਤੋਂ ਖਾਤਾ ਹੈ?",
+      "signIn": "ਸਾਈਨ ਇਨ ਕਰੋ",
+      "register": "ਰਜਿਸਟਰ ਕਰੋ",
+      "logout": "ਲੌਗ ਆਊਟ",
+      "loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ro": {
+      "authorization": "Autentificare",
+      "registration": "Înregistrare",
+      "email": "Introduceți e-mailul",
+      "password": "Introduceți parola",
+      "google": "Autentificare cu Google",
+      "noAccount": "Nu aveți cont?",
+      "alreadyAccount": "Aveți deja cont?",
+      "signIn": "Autentificare",
+      "register": "Înregistrare",
+      "logout": "Deconectare",
+      "loading": "Se încarcă...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "sr": {
+      "authorization": "Пријава",
+      "registration": "Регистрација",
+      "email": "Унесите имејл",
+      "password": "Унесите лозинку",
+      "google": "Пријава са Google-ом",
+      "noAccount": "Немате налог?",
+      "alreadyAccount": "Већ имате налог?",
+      "signIn": "Пријава",
+      "register": "Регистрација",
+      "logout": "Одјава",
+      "loading": "Учитавање...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "si": {
+      "authorization": "පුරන් ලියන්න",
+      "registration": "ලියාපදිංචි වන්න",
+      "email": "ඊමේල් ඇතුළත් කරන්න",
+      "password": "මුරපදය ඇතුළත් කරන්න",
+      "google": "Google සමඟ පුරන් ලියන්න",
+      "noAccount": "ගිණුම නැද්ද?",
+      "alreadyAccount": "දැනටමත් ගිණුම තිබේද?",
+      "signIn": "පුරන් ලියන්න",
+      "register": "ලියාපදිංචි වන්න",
+      "logout": "ඉවත්වන්න",
+      "loading": " laden...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "sk": {
+      "authorization": "Prihlásenie",
+      "registration": "Registrácia",
+      "email": "Zadajte e-mail",
+      "password": "Zadajte heslo",
+      "google": "Prihlásiť sa cez Google",
+      "noAccount": "Nemáte účet?",
+      "alreadyAccount": "Už máte účet?",
+      "signIn": "Prihlásiť sa",
+      "register": "Registrovať sa",
+      "logout": "Odhlásiť sa",
+      "loading": "Načítava sa...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "sl": {
+      "authorization": "Prijava",
+      "registration": "Registracija",
+      "email": "Vnesite e-pošto",
+      "password": "Vnesite geslo",
+      "google": "Prijava z Google",
+      "noAccount": "Nimate računa?",
+      "alreadyAccount": "Že imate račun?",
+      "signIn": "Prijava",
+      "register": "Registracija",
+      "logout": "Odjava",
+      "loading": "Nalaganje...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "es": {
+      "authorization": "Iniciar sesión",
+      "registration": "Registrarse",
+      "email": "Introducir email",
+      "password": "Introducir contraseña",
+      "google": "Iniciar sesión con Google",
+      "noAccount": "¿Sin cuenta?",
+      "alreadyAccount": "¿Ya tienes cuenta?",
+      "signIn": "Iniciar sesión",
+      "register": "Registrarse",
+      "logout": "Cerrar sesión",
+      "loading": "Cargando...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "sw": {
+      "authorization": "Ingia",
+      "registration": "Usajili",
+      "email": "Ingiza barua pepe",
+      "password": "Ingiza nenosiri",
+      "google": "Ingia na Google",
+      "noAccount": "Hakuna akaunti?",
+      "alreadyAccount": "Tayari una akaunti?",
+      "signIn": "Ingia",
+      "register": "Jisajili",
+      "logout": "Ondoka",
+      "loading": "Inapakia...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "tl": {
+      "authorization": "Mag-sign in",
+      "registration": "Pagrehistro",
+      "email": "Ilagay ang email",
+      "password": "Ilagay ang password",
+      "google": "Mag-sign in sa Google",
+      "noAccount": "Walang account?",
+      "alreadyAccount": "May account ka na?",
+      "signIn": "Mag-sign in",
+      "register": "Magrehistro",
+      "logout": "Mag-log out",
+      "loading": "Naglo-load...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "tg": {
+      "authorization": "Вуруд",
+      "registration": "Бақайдгирӣ",
+      "email": "Email ворид кунед",
+      "password": "Рамзи убур ворид кунед",
+      "google": "Бо Google ворид шавед",
+      "noAccount": "Ҳисоб надоред?",
+      "alreadyAccount": "Аллакай ҳисоб доред?",
+      "signIn": "Вуруд",
+      "register": "Бақайдгирӣ",
+      "logout": "Баромадан",
+      "loading": "Бор шуда истодааст...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "th": {
+      "authorization": "ลงชื่อเข้าใช้",
+      "registration": "ลงทะเบียน",
+      "email": "ใส่อีเมล",
+      "password": "ใส่รหัสผ่าน",
+      "google": "ลงชื่อเข้าใช้ด้วย Google",
+      "noAccount": "ยังไม่มีบัญชี?",
+      "alreadyAccount": "มีบัญชีอยู่แล้ว?",
+      "signIn": "ลงชื่อเข้าใช้",
+      "register": "ลงทะเบียน",
+      "logout": "ออกจากระบบ",
+      "loading": "กำลังโหลด...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "tr": {
+      "authorization": "Giriş yap",
+      "registration": "Kayıt ol",
+      "email": "E-posta girin",
+      "password": "Şifre girin",
+      "google": "Google ile giriş yap",
+      "noAccount": "Hesabınız yok mu?",
+      "alreadyAccount": "Zaten hesabınız var mı?",
+      "signIn": "Giriş yap",
+      "register": "Kayıt ol",
+      "logout": "Çıkış yap",
+      "loading": "Yükleniyor...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "uk": {
+      "authorization": "Авторизація",
+      "registration": "Реєстрація",
+      "email": "Введіть email",
+      "password": "Введіть пароль",
+      "google": "Увійти через Google",
+      "noAccount": "Немає акаунту?",
+      "alreadyAccount": "Вже є акаунт?",
+      "signIn": "Увійти",
+      "register": "Зареєструватися",
+      "logout": "Вийти",
+      "loading": "Завантаження...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ur": {
+      "authorization": "سائن ان کریں",
+      "registration": "رجسٹریشن",
+      "email": "ای میل درج کریں",
+      "password": "پاس ورڈ درج کریں",
+      "google": "Google سے سائن ان کریں",
+      "noAccount": "اکاؤنٹ نہیں ہے؟",
+      "alreadyAccount": "پہلے سے اکاؤنٹ ہے؟",
+      "signIn": "سائن ان کریں",
+      "register": "رجسٹر کریں",
+      "logout": "لاگ آؤٹ",
+      "loading": "لوڈ ہو رہا ہے...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "uz": {
+      "authorization": "Kirish",
+      "registration": "Ro'yxatdan o'tish",
+      "email": "Email kiriting",
+      "password": "Parol kiriting",
+      "google": "Google orqali kirish",
+      "noAccount": "Hisob yo'qmi?",
+      "alreadyAccount": "Hisobingiz bormi?",
+      "signIn": "Kirish",
+      "register": "Ro'yxatdan o'tish",
+      "logout": "Chiqish",
+      "loading": "Yuklanmoqda...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "vi": {
+      "authorization": "Đăng nhập",
+      "registration": "Đăng ký",
+      "email": "Nhập email",
+      "password": "Nhập mật khẩu",
+      "google": "Đăng nhập bằng Google",
+      "noAccount": "Chưa có tài khoản?",
+      "alreadyAccount": "Đã có tài khoản?",
+      "signIn": "Đăng nhập",
+      "register": "Đăng ký",
+      "logout": "Đăng xuất",
+      "loading": "Đang tải...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "cy": {
+      "authorization": "Mewngofnodi",
+      "registration": "Cofrestru",
+      "email": "Rhowch e-bost",
+      "password": "Rhowch gyfrinair",
+      "google": "Mewngofnodi gyda Google",
+      "noAccount": "Dim cyfrif?",
+      "alreadyAccount": "Eisoes gennych gyfrif?",
+      "signIn": "Mewngofnodi",
+      "register": "Cofrestru",
+      "logout": "Allgofnodi",
+      "loading": "Yn llwytho...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "xh": {
+      "authorization": "Ngena",
+      "registration": "Ukubhalisa",
+      "email": "Faka i-imeyili",
+      "password": "Faka iphasiwedi",
+      "google": "Ngena nge-Google",
+      "noAccount": "Akukho akhawunti?",
+      "alreadyAccount": "Une akhawunti?",
+      "signIn": "Ngena",
+      "register": "Bhalisa",
+      "logout": "Phuma",
+      "loading": "Iyolayisha...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "yi": {
+      "authorization": "אָנמאָל אונטער",
+      "registration": "רעגיסטרירונג",
+      "email": "אַרייַן איבערבליק",
+      "password": "אַרייַן פּאַסוואָרד",
+      "google": "כאַפּן אַרייַן מיט Google",
+      "noAccount": "קיין חשבון?",
+      "alreadyAccount": "שוין האָט איר חשבון?",
+      "signIn": "כאַפּן אַרייַן",
+      "register": "רעגיסטרירן",
+      "logout": "אַרויסגיין",
+      "loading": "לאָדן...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "yo": {
+      "authorization": "Wo ile",
+      "registration": "Forukọsilẹ",
+      "email": "Fi imeeli silẹ",
+      "password": "Fi ọrọ igbaniwọle silẹ",
+      "google": "Wọlé pẹlu Google",
+      "noAccount": "Ko si akọọlẹ?",
+      "alreadyAccount": "Ọ ti ni akọọlẹ tẹlẹ?",
+      "signIn": "Wọlé",
+      "register": "Forukọsilẹ",
+      "logout": "Jade",
+      "loading": "N gbarale...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "zu": {
+      "authorization": "Ngena",
+      "registration": "Ukubhalisa",
+      "email": "Faka i-imeyili",
+      "password": "Faka iphasiwedi",
+      "google": "Ngena nge-Google",
+      "noAccount": "Awuna i-akhawunti?",
+      "alreadyAccount": "Usenayo i-akhawunti?",
+      "signIn": "Ngena",
+      "register": "Bhalisa",
+      "logout": "Phuma",
+      "loading": "Iyalayisha...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "gu": {
+      "authorization": "સાઇન ઇન કરો",
+      "registration": "નોંધણી",
+      "email": "ઈમેલ દાખલ કરો",
+      "password": "પાસવર્ડ દાખલ કરો",
+      "google": "Google સાથે સાઇન ઇન કરો",
+      "noAccount": "એકાઉન્ટ નથી?",
+      "alreadyAccount": "પહેલાથી એકાઉન્ટ છે?",
+      "signIn": "સાઇન ઇન કરો",
+      "register": "રજિસ્ટર કરો",
+      "logout": "લોગ આઉટ",
+      "loading": "લોડ થઈ રહ્યું છે...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "haw": {
+      "authorization": "Komo i loko",
+      "registration": "Ho'opa'a inoa",
+      "email": "Hoʻokomo i ka leka uila",
+      "password": "Hoʻokomo i ka huaʻōlelo",
+      "google": "Komoho me Google",
+      "noAccount": "ʻAʻohe moʻokāki?",
+      "alreadyAccount": "Loaʻa iā ʻoe ka moʻokāki?",
+      "signIn": "Komoho",
+      "register": "Hoʻopaʻa inoa",
+      "logout": "Haʻalele",
+      "loading": "Ke hoʻouka nei...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    },
+    "ig": {
+      "authorization": "Banye",
+      "registration": "Ndebanye aha",
+      "email": "Tinye email",
+      "password": "Tinye okwuntughe",
+      "google": "Banye site na Google",
+      "noAccount": "Ọ nweghị akaụntụ?",
+      "alreadyAccount": "Ị nweelarị akaụntụ?",
+      "signIn": "Banye",
+      "register": "Debanye aha",
+      "logout": "Pụọ",
+      "loading": "Na-e budata...",
+      "gallery": "Misa Gallery",
+      "admin": "Admin",
+      "deleteImage": "Delete image?",
+      "noImages": "No images yet. Upload the first image."
+    }
+  },
+  "previews": {
+    "en": {
+      "title": "Misa Gallery",
+      "description": "Misa's drawings — an image gallery"
+    },
+    "ru": {
+      "title": "Галерея Misa",
+      "description": "Рисунки Misa — галерея изображений"
+    },
+    "de": {
+      "title": "Misa Galerie",
+      "description": "Misas Zeichnungen — eine Bildergalerie"
+    },
+    "ar": {
+      "title": "معرض Misa",
+      "description": "رسومات Misa — معرض صور"
+    },
+    "sq": {
+      "title": "Misa Gallery — Shqip",
+      "description": "Misa Gallery — Shqip"
+    },
+    "am": {
+      "title": "Misa Gallery — አማርኛ",
+      "description": "Misa Gallery — አማርኛ"
+    },
+    "hy": {
+      "title": "Misa Gallery — Հայերեն",
+      "description": "Misa Gallery — Հայերեն"
+    },
+    "az": {
+      "title": "Misa Gallery — Azərbaycan",
+      "description": "Misa Gallery — Azərbaycan"
+    },
+    "eu": {
+      "title": "Misa Gallery — Euskara",
+      "description": "Misa Gallery — Euskara"
+    },
+    "be": {
+      "title": "Misa Gallery — Беларуская",
+      "description": "Misa Gallery — Беларуская"
+    },
+    "bn": {
+      "title": "Misa Gallery — বাংলা",
+      "description": "Misa Gallery — বাংলা"
+    },
+    "bg": {
+      "title": "Misa Gallery — Български",
+      "description": "Misa Gallery — Български"
+    },
+    "my": {
+      "title": "Misa Gallery — မြန်မာဘာသာ",
+      "description": "Misa Gallery — မြန်မာဘာသာ"
+    },
+    "ca": {
+      "title": "Misa Gallery — Català",
+      "description": "Misa Gallery — Català"
+    },
+    "zh": {
+      "title": "Misa 画廊",
+      "description": "Misa 的绘画作品与图片画廊"
+    },
+    "zh-TW": {
+      "title": "Misa 畫廊",
+      "description": "Misa 的繪畫作品與圖片畫廊"
+    },
+    "hr": {
+      "title": "Misa Gallery — Hrvatski",
+      "description": "Misa Gallery — Hrvatski"
+    },
+    "cs": {
+      "title": "Misa Gallery — Čeština",
+      "description": "Misa Gallery — Čeština"
+    },
+    "da": {
+      "title": "Misa Gallery — Dansk",
+      "description": "Misa Gallery — Dansk"
+    },
+    "nl": {
+      "title": "Misa Gallery — Nederlands",
+      "description": "Misa Gallery — Nederlands"
+    },
+    "et": {
+      "title": "Misa Gallery — Eesti",
+      "description": "Misa Gallery — Eesti"
+    },
+    "fi": {
+      "title": "Misa Gallery — Suomi",
+      "description": "Misa Gallery — Suomi"
+    },
+    "fr": {
+      "title": "Galerie Misa",
+      "description": "Les dessins de Misa — une galerie d'images"
+    },
+    "gl": {
+      "title": "Misa Gallery — Galego",
+      "description": "Misa Gallery — Galego"
+    },
+    "ka": {
+      "title": "Misa Gallery — ქართული",
+      "description": "Misa Gallery — ქართული"
+    },
+    "el": {
+      "title": "Misa Gallery — Ελληνικά",
+      "description": "Misa Gallery — Ελληνικά"
+    },
+    "he": {
+      "title": "Misa Gallery — עברית",
+      "description": "Misa Gallery — עברית"
+    },
+    "hi": {
+      "title": "Misa Gallery — हिन्दी",
+      "description": "Misa Gallery — हिन्दी"
+    },
+    "hu": {
+      "title": "Misa Gallery — Magyar",
+      "description": "Misa Gallery — Magyar"
+    },
+    "is": {
+      "title": "Misa Gallery — Íslenska",
+      "description": "Misa Gallery — Íslenska"
+    },
+    "id": {
+      "title": "Misa Gallery — Bahasa Indonesia",
+      "description": "Misa Gallery — Bahasa Indonesia"
+    },
+    "ga": {
+      "title": "Misa Gallery — Gaeilge",
+      "description": "Misa Gallery — Gaeilge"
+    },
+    "it": {
+      "title": "Misa Gallery — Italiano",
+      "description": "Misa Gallery — Italiano"
+    },
+    "ja": {
+      "title": "Misa ギャラリー",
+      "description": "Misa のイラストと画像ギャラリー"
+    },
+    "kn": {
+      "title": "Misa Gallery — ಕನ್ನಡ",
+      "description": "Misa Gallery — ಕನ್ನಡ"
+    },
+    "kk": {
+      "title": "Misa Gallery — Қазақша",
+      "description": "Misa Gallery — Қазақша"
+    },
+    "km": {
+      "title": "Misa Gallery — ភាសាខ្មែរ",
+      "description": "Misa Gallery — ភាសាខ្មែរ"
+    },
+    "ko": {
+      "title": "Misa 갤러리",
+      "description": "Misa의 그림과 이미지 갤러리"
+    },
+    "lo": {
+      "title": "Misa Gallery — ພາສາລາວ",
+      "description": "Misa Gallery — ພາສາລາວ"
+    },
+    "lv": {
+      "title": "Misa Gallery — Latviešu",
+      "description": "Misa Gallery — Latviešu"
+    },
+    "lt": {
+      "title": "Misa Gallery — Lietuvių",
+      "description": "Misa Gallery — Lietuvių"
+    },
+    "mk": {
+      "title": "Misa Gallery — Македонски",
+      "description": "Misa Gallery — Македонски"
+    },
+    "ms": {
+      "title": "Misa Gallery — Bahasa Melayu",
+      "description": "Misa Gallery — Bahasa Melayu"
+    },
+    "ml": {
+      "title": "Misa Gallery — മലയാളം",
+      "description": "Misa Gallery — മലയാളം"
+    },
+    "mt": {
+      "title": "Misa Gallery — Malti",
+      "description": "Misa Gallery — Malti"
+    },
+    "mr": {
+      "title": "Misa Gallery — मराठी",
+      "description": "Misa Gallery — मराठी"
+    },
+    "mn": {
+      "title": "Misa Gallery — Монгол",
+      "description": "Misa Gallery — Монгол"
+    },
+    "ne": {
+      "title": "Misa Gallery — नेपाली",
+      "description": "Misa Gallery — नेपाली"
+    },
+    "nb": {
+      "title": "Misa Gallery — Norsk (bokmål)",
+      "description": "Misa Gallery — Norsk (bokmål)"
+    },
+    "fa": {
+      "title": "Misa Gallery — فارسی",
+      "description": "Misa Gallery — فارسی"
+    },
+    "pl": {
+      "title": "Misa Gallery — Polski",
+      "description": "Misa Gallery — Polski"
+    },
+    "pt": {
+      "title": "Misa Gallery — Português",
+      "description": "Misa Gallery — Português"
+    },
+    "pa": {
+      "title": "Misa Gallery — ਪੰਜਾਬੀ",
+      "description": "Misa Gallery — ਪੰਜਾਬੀ"
+    },
+    "ro": {
+      "title": "Misa Gallery — Română",
+      "description": "Misa Gallery — Română"
+    },
+    "sr": {
+      "title": "Misa Gallery — Српски",
+      "description": "Misa Gallery — Српски"
+    },
+    "si": {
+      "title": "Misa Gallery — සිංහල",
+      "description": "Misa Gallery — සිංහල"
+    },
+    "sk": {
+      "title": "Misa Gallery — Slovenčina",
+      "description": "Misa Gallery — Slovenčina"
+    },
+    "sl": {
+      "title": "Misa Gallery — Slovenščina",
+      "description": "Misa Gallery — Slovenščina"
+    },
+    "es": {
+      "title": "Galer?a Misa",
+      "description": "Dibujos de Misa — una galer?a de im?genes"
+    },
+    "sw": {
+      "title": "Misa Gallery — Kiswahili",
+      "description": "Misa Gallery — Kiswahili"
+    },
+    "tl": {
+      "title": "Misa Gallery — Tagalog",
+      "description": "Misa Gallery — Tagalog"
+    },
+    "tg": {
+      "title": "Misa Gallery — Тоҷикӣ",
+      "description": "Misa Gallery — Тоҷикӣ"
+    },
+    "th": {
+      "title": "Misa Gallery — ภาษาไทย",
+      "description": "Misa Gallery — ภาษาไทย"
+    },
+    "tr": {
+      "title": "Misa Gallery — Türkçe",
+      "description": "Misa Gallery — Türkçe"
+    },
+    "uk": {
+      "title": "Галерея Misa",
+      "description": "Малюнки Misa — галерея зображень"
+    },
+    "ur": {
+      "title": "Misa Gallery — اردو",
+      "description": "Misa Gallery — اردو"
+    },
+    "uz": {
+      "title": "Misa Gallery — Oʻzbek",
+      "description": "Misa Gallery — Oʻzbek"
+    },
+    "vi": {
+      "title": "Misa Gallery — Tiếng Việt",
+      "description": "Misa Gallery — Tiếng Việt"
+    },
+    "cy": {
+      "title": "Misa Gallery — Cymraeg",
+      "description": "Misa Gallery — Cymraeg"
+    },
+    "xh": {
+      "title": "Misa Gallery — isiXhosa",
+      "description": "Misa Gallery — isiXhosa"
+    },
+    "yi": {
+      "title": "Misa Gallery — ייִדיש",
+      "description": "Misa Gallery — ייִדיש"
+    },
+    "yo": {
+      "title": "Misa Gallery — Yorùbá",
+      "description": "Misa Gallery — Yorùbá"
+    },
+    "zu": {
+      "title": "Misa Gallery — isiZulu",
+      "description": "Misa Gallery — isiZulu"
+    },
+    "gu": {
+      "title": "Misa Gallery — ગુજરાતી",
+      "description": "Misa Gallery — ગુજરાતી"
+    },
+    "haw": {
+      "title": "Misa Gallery — ʻŌlelo Hawaiʻi",
+      "description": "Misa Gallery — ʻŌlelo Hawaiʻi"
+    },
+    "ig": {
+      "title": "Misa Gallery — Igbo",
+      "description": "Misa Gallery — Igbo"
+    }
+  }
+}
