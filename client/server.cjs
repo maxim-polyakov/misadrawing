@@ -11,7 +11,6 @@ try {
 const port = Number(process.env.PORT || 3000);
 const buildDirectory = path.join(__dirname, "build");
 const publicUrl = (process.env.PUBLIC_SITE_URL || "https://misagallery.baxic.ru").replace(/\/$/, "");
-const previewVersion = "2";
 const previews = languagePack.previews;
 
 const contentTypes = {
@@ -73,7 +72,7 @@ function renderIndex(template, request, url) {
   const language = requestLanguage(request, url);
   const preview = previews[language] || previews.en;
   const pageUrl = `${publicUrl}${url.pathname}${url.search}`;
-  const imageUrl = `${publicUrl}/logo.jpg?v=${previewVersion}`;
+  const imageUrl = `${publicUrl}/logo.jpg`;
   const htmlLanguage = language === "zh" ? "zh-CN" : language;
 
   let html = template.replace(/<html\s+lang="[^"]*"/i, `<html lang="${escapeHtml(htmlLanguage)}"`);

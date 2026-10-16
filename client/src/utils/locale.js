@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import languagePack from "./galleryLanguagePack.json";
 
 const STORAGE_KEY = "misa_gallery_locale";
-export const PREVIEW_VERSION = "2";
 
 export const LANGUAGES = languagePack.languages;
 export const LANGUAGE_CODES = LANGUAGES.map(({ code }) => code);
@@ -30,7 +29,6 @@ export function getLanguage() {
 export function withLangQuery(target, language = getLanguage()) {
     const url = new URL(target, window.location.origin);
     url.searchParams.set("lang", language);
-    url.searchParams.set("v", PREVIEW_VERSION);
     return `${url.pathname}${url.search}${url.hash}`;
 }
 
