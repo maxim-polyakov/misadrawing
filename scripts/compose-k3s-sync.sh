@@ -163,6 +163,36 @@ PY
   log "Compose environment synchronized for $namespace/$deployment"
 }
 
+sync_container_process() {
+  local namespace=$1 deployment=$2 container=$3 source_image=$4
+  local process_patch
+  process_patch=$(
+    docker image inspect "$source_image" |
+      CONTAINER_NAME="$container" python3 -c '
+import json, os, sys
+config = json.load(sys.stdin)[0].get("Config") or {}
+entrypoint = config.get("Entrypoint") or None
+command = config.get("Cmd") or None
+print(json.dumps({
+    "spec": {
+        "template": {
+            "spec": {
+                "containers": [{
+                    "name": os.environ["CONTAINER_NAME"],
+                    "command": entrypoint,
+                    "args": command,
+                }]
+            }
+        }
+    }
+}, separators=(",", ":")))
+'
+  )
+  "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=strategic \
+    -p "$process_patch" >/dev/null
+  log "Container entrypoint and command synchronized for $namespace/$deployment"
+}
+
 apply_schema_patches() {
   local namespace=$1 deployment=$2 service=$3 source_image=$4
 
@@ -679,6 +709,7 @@ for row in "${sync_services[@]}"; do
     -o jsonpath='{.spec.template.spec.containers[0].name}')
   [[ -n "$container" ]] || die "cannot determine container for $namespace/$deployment"
 
+  sync_container_process "$namespace" "$deployment" "$container" "$source_image"
   apply_schema_patches "$namespace" "$deployment" "$service" "$source_image"
 
   "${kube[@]}" patch deployment "$deployment" -n "$namespace" --type=json \
