@@ -55,16 +55,22 @@ const MyNavbar = observer(() => {
                             </Link>
                         </Nav>
                     )}
-                    <select
-                        className="gallery-language-select ml-3"
-                        aria-label="Language"
-                        value={language}
-                        onChange={(event) => setLanguage(event.target.value)}
-                    >
-                        {LANGUAGES.map(({ code, label }) => (
-                            <option key={code} value={code}>{label}</option>
-                        ))}
-                    </select>
+                    <label className="gallery-language-picker ml-3">
+                        <span className="gallery-language-picker__icon" aria-hidden="true">
+                            🌐
+                        </span>
+                        <select
+                            className="gallery-language-select"
+                            aria-label="Language"
+                            value={language}
+                            onChange={(event) => setLanguage(event.target.value)}
+                        >
+                            {LANGUAGES.map(({ code, label }) => (
+                                <option key={code} value={code}>{label}</option>
+                            ))}
+                        </select>
+                        <span className="gallery-language-picker__arrow" aria-hidden="true" />
+                    </label>
                 </Container>
             </Navbar>
     );
